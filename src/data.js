@@ -6,13 +6,33 @@ export const BRAND = {
   eyebrow: 'Infosys Topaz™ · AI-First Value Framework',
   event: 'Confluence US 2026',
   centerTitle: ['UNLOCK', 'AI VALUE'],
+  intro: {
+    headline: 'Unlock AI value.',
+    sub: 'Six interconnected value pools. One disciplined path from experimentation to enterprise scale.',
+    cta: 'Begin',
+  },
   // Fact labels are capped at two lines in the layout — keep them short.
   facts: [
     { value: '$300–400B', label: 'AI-first services opportunity by 2030' },
     { value: '90%', label: 'of our top 200 clients on an AI journey' },
     { value: '6', label: 'interconnected value pools, one path' },
   ],
-  overviewLine: 'Six value pools. Deeply interconnected. Beyond experimentation, into scale.',
+  // One entry per line — the break is deliberate, not left to the measure.
+  headline: ['Six value pools.', 'Deeply interconnected.'],
+  subhead: 'Beyond experimentation, into scale.',
+
+  guidebook: {
+    cta: 'Download the guidebook',
+    title: 'Take it with you',
+    sub: 'Scan to get the AI-First Value Framework guidebook sent to your inbox.',
+    // ---------------------------------------------------------------------
+    // TODO: replace with the real Infosys lead-capture landing page. This is
+    // the ONLY line that needs changing — the QR re-encodes automatically.
+    // ---------------------------------------------------------------------
+    url: 'https://www.infosys.com/navigate-your-next/unlock-ai-value.html',
+    isPlaceholder: true,
+    footnote: 'Or visit infosys.com/unlock-ai-value',
+  },
 };
 
 export const POOLS = [
@@ -20,7 +40,7 @@ export const POOLS = [
     id: 'data-for-ai',
     verb: 'INSIGHT',
     title: 'Data for AI',
-    hook: 'Raw data becomes a trusted strategic asset.',
+    hook: 'Raw data becomes a trusted, model-ready asset.',
     bullets: [
       'AI-ready data platforms',
       'Fingerprinting & synthetic data',
@@ -34,13 +54,13 @@ export const POOLS = [
     id: 'ai-strategy-engineering',
     verb: 'ORCHESTRATE',
     title: 'AI Strategy & Engineering',
-    hook: 'One enterprise AI operating model — not a hundred pilots.',
+    hook: 'One AI operating model, not a hundred pilots.',
     bullets: [
       'Agents, platforms & tools in concert',
       'Purpose-built AI infrastructure',
       'Architecture tailored to the business',
     ],
-    proof: 'Move past experimentation to an enterprise-wide operating model.',
+    proof: 'Past experimentation, into an enterprise operating model.',
     accent: 0x4f9dff,
     viz: 'orbit',
   },
@@ -48,7 +68,7 @@ export const POOLS = [
     id: 'ai-trust',
     verb: 'ASSURE',
     title: 'AI Trust',
-    hook: 'Scale AI with confidence, across the whole lifecycle.',
+    hook: 'Responsible, secure AI across the lifecycle.',
     bullets: [
       'Risk assessment & policy design',
       'Security testing for agents',
@@ -62,13 +82,13 @@ export const POOLS = [
     id: 'physical-ai',
     verb: 'INNOVATE',
     title: 'Physical AI',
-    hook: 'Where digital meets physical — and acts in real time.',
+    hook: 'Digital meets physical, acting in real time.',
     bullets: [
       'Sensor signal to real-world action',
       'Digital twins, robotics, autonomy',
       'Edge intelligence inside products',
     ],
-    proof: 'Reimagine products, operations and experiences at the convergence.',
+    proof: 'Reimagined products where digital and physical converge.',
     accent: 0xffb454,
     viz: 'pulse',
   },
@@ -76,7 +96,7 @@ export const POOLS = [
     id: 'agentic-legacy-modernization',
     verb: 'MODERNIZE',
     title: 'Agentic Legacy Modernization',
-    hook: 'Agents read your estate, recover its intent, and rebuild it.',
+    hook: 'Agents read your legacy estate and rebuild it.',
     bullets: [
       'Reverse-engineer legacy systems',
       'Progressive, zero-disruption change',
@@ -90,7 +110,7 @@ export const POOLS = [
     id: 'process-ai',
     verb: 'TRANSFORM',
     title: 'Process AI',
-    hook: 'End-to-end workflows redesigned around agents and people.',
+    hook: 'Workflows redesigned around agents and people.',
     bullets: [
       'Domain-aware agents',
       'Human expertise in the loop',

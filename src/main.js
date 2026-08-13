@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import QRCode from 'qrcode';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -10,6 +11,7 @@ import { createCoreViz } from './coreviz.js';
 
 const IDLE_RESET_MS = 60_000; // kiosk: drop back to the overview after a minute
 const ATTRACT_AFTER_MS = 9_000; // idle on the overview: start sweeping segments
+const INTRO_RETURN_MS = 90_000; // untouched for this long: back to the intro loop
 
 /* ------------------------------------------------------------------ *
  * Renderer, scene, camera
@@ -104,8 +106,9 @@ scene.add(world);
 const { group: hexGroup, pools, core, coreTitle } = buildHexagon();
 world.add(hexGroup);
 
-// A hex ring with light pulses running round it — the "deeply interconnected"
-// idea, shown rather than written. Fades away once a pool is open.
+// A hex ring tracing the inner boundary — the "deeply interconnected" idea,
+// shown rather than written. Fades away once a pool is open. Six-sided, to stay
+// consistent with the rest of the visual language.
 const RING_R = R * 0.49;
 const ringPoint = (t) => {
   const u = ((t % 1) + 1) % 1;
@@ -124,16 +127,6 @@ const ringLine = new THREE.LineLoop(
   new THREE.LineBasicMaterial({ color: 0x5fd8ff, transparent: true, opacity: 0.3, toneMapped: false })
 );
 hexGroup.add(ringLine);
-
-const pulses = [...Array(4)].map((_, i) => {
-  const m = new THREE.Mesh(
-    new THREE.SphereGeometry(0.075, 12, 12),
-    new THREE.MeshBasicMaterial({ color: 0x9fe9ff, transparent: true, toneMapped: false })
-  );
-  m.userData.offset = i / 4;
-  hexGroup.add(m);
-  return m;
-});
 
 const vizCache = new Map();
 function vizFor(i) {
@@ -185,7 +178,9 @@ function layout() {
   // Distance that keeps the whole hexagon in frame on both axes, with margin
   // for the lockup above and the fact strip below.
   const half = Math.tan((camera.fov * Math.PI) / 360);
-  const rNeeded = R * (state.isPortrait ? 1.14 : 1.7);
+  // Portrait leaves more headroom: the prompt and the copy column stack under
+  // the board there rather than sitting beside it.
+  const rNeeded = R * (state.isPortrait ? 1.26 : 1.7);
   camera.position.z = Math.max(rNeeded / half, rNeeded / (half * camera.aspect));
   camera.updateProjectionMatrix();
 
@@ -204,7 +199,7 @@ function applyTargets() {
 
   if (state.isPortrait) {
     target.x = 0;
-    target.y = state.selected < 0 ? worldH * 0.07 : worldH * 0.235;
+    target.y = state.selected < 0 ? worldH * 0.09 : worldH * 0.235;
     target.scale = state.selected < 0 ? 1 : 0.5;
   } else {
     // The overview and the open state share one framing, so selecting a pool
@@ -246,11 +241,18 @@ const dom = {
   mediaHint: el('mediaHint'),
   dots: el('dots'),
   lockup: el('lockup'),
+  prompt: el('prompt'),
 };
 
 el('eyebrow').textContent = BRAND.eyebrow;
 el('event').textContent = BRAND.event;
-el('overviewLine').textContent = BRAND.overviewLine;
+el('introEyebrow').textContent = BRAND.eyebrow;
+el('introEvent').textContent = BRAND.event;
+el('introHeadline').textContent = BRAND.intro.headline;
+el('introSub').textContent = BRAND.intro.sub;
+el('beginLabel').textContent = BRAND.intro.cta;
+el('overviewHeadline').innerHTML = BRAND.headline.join('<br>');
+el('overviewSub').textContent = BRAND.subhead;
 el('facts').innerHTML = BRAND.facts
   .map((f) => `<div class="fact"><span class="v">${f.value}</span><span class="l">${f.label}</span></div>`)
   .join('');
@@ -296,6 +298,100 @@ async function loadMedia(pool) {
 }
 
 /* ------------------------------------------------------------------ *
+ * Intro / homepage
+ *
+ * A full-screen layer over the live scene rather than a separate page, so
+ * Begin is an instant fade — the WebGL board is already built behind it.
+ * ------------------------------------------------------------------ */
+const introVideo = el('introVideo');
+const playIntro = () => introVideo.play().catch(() => {});
+
+resolveVideo('intro').then((url) => {
+  if (!url) return; // missing file: the intro still shows over its gradient
+  introVideo.src = url;
+  playIntro();
+});
+
+// Muted autoplay is permitted by policy, but some contexts still gate it until
+// the page has been interacted with. Retry on every opening we get rather than
+// risk the booth sitting on a frozen first frame.
+introVideo.addEventListener('canplay', playIntro);
+['pointerdown', 'keydown', 'touchstart'].forEach((ev) =>
+  addEventListener(ev, playIntro, { once: true, capture: true })
+);
+addEventListener('visibilitychange', () => {
+  if (!document.hidden) playIntro();
+});
+
+const introOpen = () => document.body.classList.contains('intro-open');
+
+function enterExperience() {
+  if (!introOpen()) return;
+  document.body.classList.remove('intro-open');
+  state.lastInput = performance.now();
+}
+
+function returnToIntro() {
+  if (introOpen()) return;
+  hideQr();
+  deselect();
+  document.body.classList.add('intro-open');
+  introVideo.currentTime = 0;
+  playIntro();
+  state.lastInput = performance.now();
+}
+
+el('begin').addEventListener('click', enterExperience);
+// Whole layer is tappable — kinder on a kiosk than hunting for the button.
+el('intro').addEventListener('click', enterExperience);
+
+/* ------------------------------------------------------------------ *
+ * Guidebook takeaway
+ *
+ * The QR is rendered locally rather than fetched, so it still works on a
+ * booth machine with no network. The destination is the only thing that
+ * needs maintaining — see BRAND.guidebook.url in data.js.
+ * ------------------------------------------------------------------ */
+const GUIDE = BRAND.guidebook;
+el('ctaLabel').textContent = GUIDE.cta;
+el('qrTitle').textContent = GUIDE.title;
+el('qrSub').textContent = GUIDE.sub;
+el('qrFoot').textContent = GUIDE.footnote;
+
+QRCode.toString(GUIDE.url, {
+  type: 'svg',
+  errorCorrectionLevel: 'M',
+  margin: 0,
+  color: { dark: '#04060e', light: '#ffffff' },
+})
+  .then((svg) => {
+    el('qrCode').innerHTML = svg;
+  })
+  .catch(() => {
+    // Never leave a blank white square on a booth screen.
+    el('qrCode').textContent = GUIDE.url;
+  });
+
+const qrOpen = () => document.body.classList.contains('qr-open');
+const showQr = () => {
+  document.body.classList.add('qr-open');
+  el('qrLayer').setAttribute('aria-hidden', 'false');
+  state.lastInput = performance.now();
+};
+const hideQr = () => {
+  document.body.classList.remove('qr-open');
+  el('qrLayer').setAttribute('aria-hidden', 'true');
+  state.lastInput = performance.now();
+};
+
+el('guidebookCta').addEventListener('click', showQr);
+el('qrClose').addEventListener('click', hideQr);
+// Tapping the backdrop dismisses; tapping the card itself does not.
+el('qrLayer').addEventListener('click', (e) => {
+  if (e.target === el('qrLayer')) hideQr();
+});
+
+/* ------------------------------------------------------------------ *
  * Selection
  * ------------------------------------------------------------------ */
 function select(i) {
@@ -308,7 +404,8 @@ function select(i) {
   dom.overview.classList.add('hidden');
   dom.panel.classList.add('open');
   dom.panel.setAttribute('aria-hidden', 'false');
-  dom.panel.style.setProperty('--accent', '#' + pool.accent.toString(16).padStart(6, '0'));
+  // On the body, not the panel, so the CTA and QR pick up the pool's accent too.
+  document.body.style.setProperty('--accent', '#' + pool.accent.toString(16).padStart(6, '0'));
 
   dom.verb.textContent = pool.verb;
   dom.title.textContent = pool.title;
@@ -337,7 +434,7 @@ function deselect() {
   dom.overview.classList.remove('hidden');
   dom.panel.classList.remove('open');
   dom.panel.setAttribute('aria-hidden', 'true');
-  dom.panel.style.removeProperty('--accent');
+  document.body.style.removeProperty('--accent');
   dom.video.pause();
   pools.forEach((p) => {
     p.targetLift = 0;
@@ -398,6 +495,14 @@ canvas.addEventListener('pointerleave', () => (state.hovered = -1));
 
 addEventListener('keydown', (e) => {
   state.lastInput = performance.now();
+  if (introOpen()) {
+    if (e.key === 'Enter' || e.key === ' ') enterExperience();
+    return;
+  }
+  if (qrOpen()) {
+    if (e.key === 'Escape') hideQr();
+    return;
+  }
   if (e.key === 'Escape') return deselect();
   if (e.key === 'ArrowRight') return cycle(1);
   if (e.key === 'ArrowLeft') return cycle(-1);
@@ -411,6 +516,8 @@ addEventListener('pointerdown', () => (state.lastInput = performance.now()), tru
  * ------------------------------------------------------------------ */
 const damp = (a, b, lambda, dt) => a + (b - a) * (1 - Math.exp(-lambda * dt));
 const clock = new THREE.Clock();
+const projected = new THREE.Vector3();
+const promptAt = { x: -1, y: -1 };
 
 function tick() {
   const dt = Math.min(clock.getDelta(), 0.05);
@@ -418,8 +525,10 @@ function tick() {
   const now = performance.now();
   const idle = now - state.lastInput;
 
-  // Kiosk: return to the overview once the visitor walks away.
+  // Kiosk: return to the overview once the visitor walks away, then all the
+  // way back to the intro loop so the booth resets itself.
   if (state.selected >= 0 && idle > IDLE_RESET_MS) deselect();
+  if (!introOpen() && idle > INTRO_RETURN_MS) returnToIntro();
 
   // Attract mode: sweep a highlight around the ring while nobody is touching.
   if (state.selected < 0 && idle > ATTRACT_AFTER_MS) {
@@ -480,14 +589,24 @@ function tick() {
   core.rotation.z = -current.tiltY * 0.4;
   if (state.selected >= 0) vizFor(state.selected).update(t, dt);
 
+  // Park the "touch a value pool" prompt just below the board. Projecting the
+  // bottom vertex keeps it attached however the board is scaled or shifted.
+  if (!state.isPortrait && state.selected < 0) {
+    projected.set(0, -R * 1.06, 0);
+    hexGroup.localToWorld(projected).project(camera);
+    const px = Math.round((projected.x * 0.5 + 0.5) * innerWidth);
+    const py = Math.round((-projected.y * 0.5 + 0.5) * innerHeight) + 26;
+    if (px !== promptAt.x || py !== promptAt.y) {
+      promptAt.x = px;
+      promptAt.y = py;
+      dom.prompt.style.left = `${px}px`;
+      dom.prompt.style.top = `${py}px`;
+    }
+  }
+
   // Interconnect ring rides with the overview state.
   const ringAlpha = coreTitle.material.opacity;
   ringLine.material.opacity = 0.3 * ringAlpha;
-  pulses.forEach((m, i) => {
-    m.position.copy(ringPoint(t * 0.075 + m.userData.offset));
-    m.material.opacity = ringAlpha * (0.55 + 0.45 * Math.sin(t * 2 + i));
-    m.visible = ringAlpha > 0.02;
-  });
   ringLine.visible = ringAlpha > 0.02;
 
   // Backdrop life.

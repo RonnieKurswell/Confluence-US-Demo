@@ -5,6 +5,28 @@
   --accent: #35d0f5;
   --panel-w: min(46vw, 880px);
   --font: "Helvetica Neue", Helvetica, Arial, system-ui, -apple-system, sans-serif;
+
+  /* ---- type scale ----
+     One definition per level of information, shared by the intro, the overview
+     and the detail panel, so the same rank always looks the same. */
+  --t-eyebrow: clamp(10px, 0.72vw, 12px);
+  --t-eyebrow-track: 0.28em;
+
+  --t-display: clamp(38px, 4.4vw, 78px);
+  --t-display-lh: 0.98;
+
+  --t-title: clamp(22px, 2.5vw, 40px);
+  --t-title-lh: 1.08;
+
+  --t-lead: clamp(15px, 1.18vw, 21px);
+  --t-lead-lh: 1.45;
+
+  --t-body: clamp(13px, 1.02vw, 17px);
+  --t-body-lh: 1.45;
+
+  --t-caption: clamp(10px, 0.74vw, 12.5px);
+  --t-caption-lh: 1.45;
+  --t-caption-track: 0.08em;
 }
 
 * {
@@ -52,19 +74,139 @@ body {
 }
 .lockup .eyebrow {
   margin-top: 0.6em;
-  font-size: clamp(11px, 0.85vw, 14px);
-  font-weight: 600;
-  letter-spacing: 0.16em;
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--accent);
 }
 .lockup .event {
-  margin-top: 0.35em;
-  font-size: clamp(10px, 0.75vw, 12px);
+  margin-top: 0.4em;
+  font-size: var(--t-eyebrow);
+  font-weight: 400;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--ink-soft);
-  opacity: 0.75;
+  opacity: 0.7;
+}
+body.intro-open .lockup:not(.intro-lockup) {
+  opacity: 0;
+}
+
+/* ---------- intro / homepage ----------
+   Sits over the live scene. Begin only fades this layer away, so entering the
+   framework costs nothing — the board is already rendering underneath. */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+}
+body.intro-open .intro {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.intro-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* The clip has bright frames; knocking it back keeps the copy legible
+     throughout the loop rather than only on the darker passages. */
+  filter: brightness(0.72) saturate(1.05);
+  /* Shows through before the file loads, and stands in if it is missing. */
+  background: radial-gradient(120% 100% at 50% 40%, #0e2044 0%, #06102a 45%, #03050c 100%);
+}
+.intro-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(3, 6, 14, 0.93) 0%,
+      rgba(3, 6, 14, 0.78) 34%,
+      rgba(3, 6, 14, 0.38) 68%,
+      rgba(3, 6, 14, 0.28) 100%
+    ),
+    linear-gradient(0deg, rgba(3, 6, 14, 0.6) 0%, rgba(3, 6, 14, 0) 50%);
+}
+
+.intro-content {
+  position: relative;
+  padding: 0 clamp(28px, 6vw, 130px);
+  max-width: min(100%, 1100px);
+}
+/* Inside the intro the lockup flows with the copy instead of pinning to the
+   corner, so the whole block reads as one column. */
+.intro-lockup {
+  position: static;
+  margin-bottom: clamp(24px, 4vh, 52px);
+}
+
+.intro-headline {
+  font-size: var(--t-display);
+  font-weight: 800;
+  line-height: var(--t-display-lh);
+  letter-spacing: -0.035em;
+  text-shadow: 0 4px 46px rgba(0, 0, 0, 0.7);
+}
+.intro-sub {
+  margin-top: clamp(14px, 2vh, 24px);
+  font-size: var(--t-lead);
+  line-height: var(--t-lead-lh);
+  color: var(--ink-soft);
+  max-width: 44ch;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.7);
+}
+
+.begin {
+  margin-top: clamp(26px, 4.2vh, 54px);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9em;
+  padding: 1.05em 1.9em;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--t-eyebrow-track);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+}
+.begin:hover {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+.begin-arrow {
+  font-size: 1.35em;
+  line-height: 1;
+  transition: transform 0.3s ease;
+}
+.begin:hover .begin-arrow {
+  transform: translateX(4px);
+}
+
+/* Everything behind the intro is inert while it is up. */
+body.intro-open .overview,
+body.intro-open .panel,
+body.intro-open .hint {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* ---------- overview ----------
@@ -91,31 +233,49 @@ body {
 .overview > * {
   transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.overview.hidden > * {
+/* The prompt owns its own transform for centring, so it opts out. */
+.overview.hidden > *:not(.prompt) {
   transform: translateY(24px);
 }
 
+/* Parked under the hexagon. main.js projects the board's bottom vertex to
+   screen space each frame and writes left/top, so it tracks the board however
+   it is scaled or shifted. */
 .prompt {
+  position: fixed;
+  left: 0;
+  top: 0;
+  transform: translateX(-50%);
+  z-index: 10;
+  white-space: nowrap;
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: clamp(10px, 0.72vw, 12px);
+  font-size: var(--t-eyebrow);
   font-weight: 700;
-  letter-spacing: 0.28em;
+  letter-spacing: var(--t-eyebrow-track);
   text-transform: uppercase;
   color: var(--accent);
   animation: breathe 3.4s ease-in-out infinite;
 }
 
-.overview-line {
+/* Header and subheader, same ranks as the panel's title and hook. */
+.overview-headline {
   margin-top: clamp(16px, 2.2vh, 28px);
-  font-size: clamp(20px, 1.95vw, 36px);
-  font-weight: 700;
-  line-height: 1.18;
-  letter-spacing: -0.015em;
+  font-size: var(--t-title);
+  font-weight: 800;
+  line-height: var(--t-title-lh);
+  letter-spacing: -0.025em;
   color: var(--ink);
-  max-width: 22ch;
   text-shadow: 0 2px 30px rgba(0, 0, 0, 0.6);
+}
+.overview-sub {
+  margin-top: clamp(10px, 1.4vh, 16px);
+  font-size: var(--t-lead);
+  line-height: var(--t-lead-lh);
+  color: var(--ink-soft);
+  max-width: 30ch;
+  text-shadow: 0 1px 20px rgba(0, 0, 0, 0.6);
 }
 
 .facts {
@@ -124,16 +284,21 @@ body {
   flex-direction: column;
   gap: clamp(14px, 2.1vh, 26px);
 }
-/* Number, then its caption directly beneath on a single line. */
+/* Hairline pill per proof point: enough structure to read as three distinct
+   units, without the boxy card look. Number, then caption on one line. */
 .fact {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
+  gap: 3px;
+  padding: clamp(10px, 1.3vh, 16px) clamp(16px, 1.5vw, 26px);
+  border: 1px solid rgba(140, 195, 255, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.028);
 }
 .fact .v {
   white-space: nowrap;
-  font-size: clamp(24px, 2.3vw, 40px);
+  font-size: clamp(22px, 2.1vw, 36px);
   font-weight: 800;
   letter-spacing: -0.02em;
   /* Solid fill, not background-clip — that cropped the trailing glyph. */
@@ -142,9 +307,9 @@ body {
 }
 .fact .l {
   white-space: nowrap;
-  font-size: clamp(9px, 0.7vw, 12.5px);
-  line-height: 1.4;
-  letter-spacing: 0.08em;
+  font-size: var(--t-caption);
+  line-height: var(--t-caption-lh);
+  letter-spacing: var(--t-caption-track);
   text-transform: uppercase;
   color: var(--ink-soft);
   opacity: 0.72;
@@ -219,14 +384,15 @@ body {
 .panel.open .panel-inner > *:nth-child(4) { transition-delay: 0.32s; }
 .panel.open .panel-inner > *:nth-child(5) { transition-delay: 0.38s; }
 .panel.open .panel-inner > *:nth-child(6) { transition-delay: 0.44s; }
+.panel.open .panel-inner > *:nth-child(7) { transition-delay: 0.5s; }
 
 .verb {
   display: flex;
   align-items: center;
   gap: 0.9em;
-  font-size: clamp(10px, 0.72vw, 12px);
+  font-size: var(--t-eyebrow);
   font-weight: 700;
-  letter-spacing: 0.36em;
+  letter-spacing: var(--t-eyebrow-track);
   text-transform: uppercase;
   color: var(--accent);
 }
@@ -238,21 +404,26 @@ body {
   box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 80%, transparent);
 }
 
+/* Title and hook are height-locked so the bullet list below them starts at the
+   same Y for every pool — nothing jumps as visitors cycle through. */
 .title {
   margin-top: clamp(14px, 1.9vh, 24px);
-  font-size: clamp(30px, 3.4vw, 62px);
+  font-size: var(--t-title);
   font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.03em;
+  line-height: var(--t-title-lh);
+  letter-spacing: -0.025em;
+  /* Sized so the longest name (Agentic Legacy Modernization) fits on one. */
+  white-space: nowrap;
   text-shadow: 0 2px 34px rgba(0, 0, 0, 0.65);
 }
 
 .hook {
   margin-top: clamp(12px, 1.6vh, 20px);
-  font-size: clamp(15px, 1.28vw, 23px);
-  line-height: 1.42;
+  font-size: var(--t-lead);
+  line-height: var(--t-lead-lh);
   color: var(--ink-soft);
-  max-width: 36ch;
+  /* One line, always — hooks in data.js are written to fit this measure. */
+  white-space: nowrap;
   text-shadow: 0 1px 20px rgba(0, 0, 0, 0.6);
 }
 
@@ -266,7 +437,8 @@ body {
 .bullets li {
   position: relative;
   padding-left: 1.7em;
-  font-size: clamp(13px, 1.02vw, 17px);
+  font-size: var(--t-body);
+  line-height: var(--t-body-lh);
   letter-spacing: 0.01em;
   color: var(--ink);
 }
@@ -368,11 +540,13 @@ body {
 
 .proof {
   margin-top: clamp(18px, 2.4vh, 30px);
-  font-size: clamp(12px, 0.92vw, 15px);
-  line-height: 1.5;
+  font-size: var(--t-caption);
+  line-height: var(--t-caption-lh);
+  letter-spacing: 0.02em;
   color: var(--ink-soft);
   opacity: 0.6;
-  max-width: 46ch;
+  /* One line, always — matches the hook above the bullets. */
+  white-space: nowrap;
 }
 
 /* close + nav */
@@ -451,6 +625,119 @@ body {
   box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 75%, transparent);
 }
 
+/* ---------- guidebook CTA + QR takeaway ----------
+   Lives at the end of the pool panel's content, so the ask arrives after the
+   visitor has actually read something — not on the framework overview. */
+.guidebook-cta {
+  margin-top: clamp(20px, 2.8vh, 34px);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85em;
+  padding: 1.05em 1.7em;
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, rgba(4, 7, 16, 0.6));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--t-eyebrow-track);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease,
+    opacity 0.4s ease;
+}
+.guidebook-cta:hover {
+  background: color-mix(in srgb, var(--accent) 26%, rgba(4, 7, 16, 0.6));
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+.cta-icon {
+  font-size: 1.3em;
+  line-height: 1;
+  color: var(--accent);
+}
+.qr-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: rgba(2, 4, 10, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+body.qr-open .qr-layer {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.qr-card {
+  position: relative;
+  width: min(90vw, 560px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: clamp(34px, 4.4vh, 60px) clamp(30px, 3.4vw, 66px);
+  transform: translateY(18px) scale(0.97);
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+body.qr-open .qr-card {
+  transform: none;
+}
+/* Pinned to the screen, not the card — reads as "leave this overlay". */
+.qr-close {
+  position: fixed;
+  top: clamp(20px, 3vh, 42px);
+  right: clamp(24px, 3vw, 50px);
+}
+
+/* White quiet zone — scanners need the contrast, so this one stays a card. */
+.qr-code {
+  width: clamp(190px, 17vw, 270px);
+  height: clamp(190px, 17vw, 270px);
+  padding: clamp(12px, 1.2vw, 18px);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55),
+    0 0 60px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+.qr-code svg,
+.qr-code canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.qr-title {
+  margin-top: clamp(22px, 3vh, 36px);
+  font-size: var(--t-title);
+  font-weight: 800;
+  line-height: var(--t-title-lh);
+  letter-spacing: -0.025em;
+}
+.qr-sub {
+  margin-top: clamp(10px, 1.4vh, 16px);
+  font-size: var(--t-lead);
+  line-height: var(--t-lead-lh);
+  color: var(--ink-soft);
+  max-width: 34ch;
+}
+.qr-foot {
+  margin-top: clamp(14px, 2vh, 22px);
+  font-size: var(--t-caption);
+  letter-spacing: var(--t-caption-track);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  opacity: 0.55;
+}
+
 /* ---------- keyboard hint ---------- */
 .hint {
   position: fixed;
@@ -505,8 +792,22 @@ body.touch .hint { display: none; }
   }
   .media { aspect-ratio: 16 / 9; margin-top: clamp(16px, 2vh, 24px); }
   .bullets { margin-top: clamp(14px, 2vh, 22px); }
-  .title { font-size: clamp(26px, 6.4vw, 42px); }
-  .hook { font-size: clamp(14px, 3.6vw, 19px); max-width: none; }
+  /* The sheet is far narrower than the landscape column, so the one-line rule
+     would force the title down to an unreadable size. Two fixed lines keeps the
+     bullets locked here instead. */
+  .title {
+    font-size: clamp(26px, 6.4vw, 42px);
+    white-space: normal;
+    min-height: calc(2em * var(--t-title-lh));
+  }
+  /* The sheet is too narrow to hold these on one line — let them wrap here. */
+  .hook {
+    font-size: clamp(14px, 3.6vw, 19px);
+    white-space: normal;
+    min-height: calc(2em * var(--t-lead-lh));
+  }
+  .proof { white-space: normal; }
+
   /* Tall kiosk panel: the overview column unwinds back under the hexagon. */
   .overview {
     top: auto;
@@ -517,30 +818,71 @@ body.touch .hint { display: none; }
     height: auto;
     align-items: center;
     padding: 0 18px;
-    gap: clamp(14px, 2.2vh, 26px);
+    gap: clamp(12px, 1.8vh, 20px);
   }
-  .overview-line {
+  .overview-headline {
     order: 1;
     margin-top: 0;
     text-align: center;
-    max-width: 28ch;
-    font-size: clamp(18px, 4.4vw, 28px);
+    font-size: clamp(20px, 5vw, 30px);
   }
-  .facts {
+  .overview-sub {
     order: 2;
     margin-top: 0;
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 14px;
+    text-align: center;
+    max-width: 34ch;
+    font-size: clamp(13px, 3.4vw, 17px);
   }
-  .prompt { order: 3; }
+  .facts {
+    order: 3;
+    margin-top: 0;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 10px;
+  }
+  /* Back into the flow, directly under the hexagon and above the headline. */
+  .prompt {
+    order: 0;
+    position: static;
+    transform: none;
+  }
   .fact {
-    flex: 0 1 auto;
+    flex: 1 1 0;
     align-items: center;
     text-align: center;
+    justify-content: center;
+    padding: 10px 8px;
+    border-radius: 12px;
   }
-  .fact .v { font-size: clamp(19px, 5vw, 28px); }
-  .fact .l { font-size: clamp(8px, 2vw, 9.5px); }
+  .fact .v { font-size: clamp(18px, 4.6vw, 26px); }
+  .fact .l { font-size: clamp(8px, 1.9vw, 9.5px); white-space: normal; }
+
+  /* Full-width in the sheet, where taps are thumb-driven. */
+  .guidebook-cta {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    padding: 1.15em 1.4em;
+  }
+
+  /* Intro: copy centres and the video crops tighter on a tall screen. */
+  .intro-content {
+    padding: 0 clamp(24px, 8vw, 60px);
+    text-align: center;
+    margin: 0 auto;
+  }
+  .intro-lockup { display: inline-block; text-align: left; }
+  .intro-sub { margin-left: auto; margin-right: auto; }
+  .intro-scrim {
+    background:
+      radial-gradient(
+        95% 46% at 50% 52%,
+        rgba(3, 6, 14, 0.88) 0%,
+        rgba(3, 6, 14, 0.55) 62%,
+        rgba(3, 6, 14, 0.35) 100%
+      ),
+      linear-gradient(0deg, rgba(3, 6, 14, 0.8) 0%, rgba(3, 6, 14, 0.3) 45%, rgba(3, 6, 14, 0.55) 100%);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

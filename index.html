@@ -9,7 +9,8 @@
     <title>Unlock AI Value — Infosys AI-First Value Framework</title>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
-  <body>
+  <!-- Starts on the intro; main.js drops the class when Begin is pressed. -->
+  <body class="intro-open">
     <canvas id="stage"></canvas>
 
     <!-- Brand lockup -->
@@ -25,7 +26,8 @@
         <span class="prompt-ring"></span>
         <span class="prompt-text">Touch a value pool to explore</span>
       </div>
-      <p class="overview-line" id="overviewLine"></p>
+      <h1 class="overview-headline" id="overviewHeadline"></h1>
+      <p class="overview-sub" id="overviewSub"></p>
       <div class="facts" id="facts"></div>
     </section>
 
@@ -50,6 +52,10 @@
           </div>
         </div>
         <p class="proof" id="panelProof"></p>
+        <button class="guidebook-cta" id="guidebookCta">
+          <span class="cta-icon" aria-hidden="true">⌖</span>
+          <span id="ctaLabel"></span>
+        </button>
       </div>
       <div class="panel-nav">
         <button class="nav-btn" id="prevBtn" aria-label="Previous value pool">‹</button>
@@ -58,7 +64,39 @@
       </div>
     </aside>
 
+    <!-- QR takeaway -->
+    <div class="qr-layer" id="qrLayer" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="qr-card">
+        <button class="close qr-close" id="qrClose" aria-label="Close">
+          <span></span><span></span>
+        </button>
+        <div class="qr-code" id="qrCode"></div>
+        <h2 class="qr-title" id="qrTitle"></h2>
+        <p class="qr-sub" id="qrSub"></p>
+        <p class="qr-foot" id="qrFoot"></p>
+      </div>
+    </div>
+
     <div class="hint" id="kbdHint">1–6 select · esc back · ← → cycle</div>
+
+    <!-- Intro / homepage. Sits above everything until Begin is pressed. -->
+    <section class="intro" id="intro">
+      <video id="introVideo" class="intro-video" autoplay muted loop playsinline preload="auto"></video>
+      <div class="intro-scrim"></div>
+      <div class="intro-content">
+        <header class="lockup intro-lockup">
+          <div class="mark">INFOSYS</div>
+          <div class="eyebrow" id="introEyebrow"></div>
+          <div class="event" id="introEvent"></div>
+        </header>
+        <h1 class="intro-headline" id="introHeadline"></h1>
+        <p class="intro-sub" id="introSub"></p>
+        <button class="begin" id="begin">
+          <span class="begin-label" id="beginLabel"></span>
+          <span class="begin-arrow" aria-hidden="true">→</span>
+        </button>
+      </div>
+    </section>
 
     <script type="module" src="/src/main.js"></script>
   </body>

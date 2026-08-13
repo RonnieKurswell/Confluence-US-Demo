@@ -1,10 +1,11 @@
 # Unlock AI Value — interactive hexagon demo
 
 A three.js show-and-tell for **Confluence US 2026**: the Infosys AI-First Value
-Framework as a touchable 3D hexagon. Tap any of the six value pools and the
+Framework as a touchable 3D hexagon. It opens on a looping video homepage;
+**Begin** drops you into the framework. Tap any of the six value pools and the
 board reconfigures — the segment lifts and takes on its accent colour, the rest
-recede, a procedural 3D visual takes over the centre, and a panel slides in with
-a one-line hook, three points, and a video.
+recede, a procedural 3D visual takes over the centre, and the right-hand column
+swaps to that pool's hook, three points, and a video.
 
 Built for a booth: big hit targets, attract mode, and an idle reset so it looks
 alive when nobody is standing at it.
@@ -32,6 +33,7 @@ stick, a local folder, or any static host — no network needed.
 
 | Input | What it does |
 | --- | --- |
+| **Begin** (or tap anywhere on the intro, or Enter/Space) | Enters the framework |
 | Tap / click a segment | Opens that value pool |
 | Tap the centre or outside the hexagon | Back to the overview |
 | `1`–`6` | Jump straight to a pool (presenter shortcut) |
@@ -39,9 +41,46 @@ stick, a local folder, or any static host — no network needed.
 | `esc` | Back to the overview |
 | Panel arrows / dots | Cycle pools |
 
-Idle behaviour: after 9 seconds on the overview a highlight sweeps around the
-ring to pull people in. After 60 seconds inside a pool it drops back to the
-overview on its own.
+Idle behaviour, so the booth resets itself:
+
+| Untouched for | What happens |
+| --- | --- |
+| 9s on the overview | A highlight starts sweeping around the ring |
+| 60s inside a pool | Drops back to the framework overview |
+| 90s | Returns to the looping intro — the attract loop |
+
+## The intro video
+
+`public/media/intro.mp4` is the homepage loop. It **must be H.264** — HEVC does
+not play in Firefox and is unreliable in Chrome off macOS, so an HEVC file will
+show a black screen at the booth. To convert a new clip (`avconvert` ships with
+macOS, no install needed):
+
+```bash
+avconvert --source "/path/to/new-clip.mov" --preset Preset1920x1080 --output public/media/intro.mp4 --replace --progress
+```
+
+Keep it silent and seamless — it loops muted and autoplays. If the file is
+missing the intro still renders over its gradient, so the demo never breaks.
+
+## The guidebook takeaway
+
+At the end of every pool panel there's a **Download the guidebook** button. It
+opens a full-screen QR code; scanning it takes the visitor to a landing page
+where they enter their details and Infosys sends them the guidebook.
+
+The QR is rendered locally from the URL, so it works with no network at the
+booth. To point it somewhere new, change one line in
+[src/data.js](src/data.js) — `BRAND.guidebook.url`. The code re-encodes itself;
+there is no image to regenerate.
+
+> **Currently a placeholder.** `url` points at the public Infosys page. Swap it
+> for the real lead-capture landing page before the event, or nobody's details
+> get collected. That page is Infosys's to build and host — this demo only links
+> to it and never collects personal data itself.
+
+The CTA deliberately does **not** appear on the framework overview; it shows up
+only once a visitor has opened a value pool and read something.
 
 ## Dropping in videos
 
