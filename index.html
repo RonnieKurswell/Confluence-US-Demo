@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Unlock AI Value — Infosys AI-First Value Framework</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <canvas id="stage"></canvas>
+
+    <!-- Brand lockup -->
+    <header class="lockup" id="lockup">
+      <div class="mark">INFOSYS</div>
+      <div class="eyebrow" id="eyebrow"></div>
+      <div class="event" id="event"></div>
+    </header>
+
+    <!-- Overview state -->
+    <section class="overview" id="overview">
+      <div class="prompt" id="prompt">
+        <span class="prompt-ring"></span>
+        <span class="prompt-text">Touch a value pool to explore</span>
+      </div>
+      <p class="overview-line" id="overviewLine"></p>
+      <div class="facts" id="facts"></div>
+    </section>
+
+    <!-- Detail panel -->
+    <aside class="panel" id="panel" aria-hidden="true">
+      <button class="close" id="close" aria-label="Back to the framework">
+        <span></span><span></span>
+      </button>
+      <div class="panel-inner">
+        <div class="verb" id="panelVerb"></div>
+        <h1 class="title" id="panelTitle"></h1>
+        <p class="hook" id="panelHook"></p>
+        <ul class="bullets" id="panelBullets"></ul>
+        <div class="media" id="panelMedia">
+          <video id="panelVideo" playsinline muted loop preload="none"></video>
+          <div class="media-placeholder" id="mediaPlaceholder">
+            <div class="media-icon">▶</div>
+            <div class="media-copy">
+              <strong>Video slot</strong>
+              <span id="mediaHint"></span>
+            </div>
+          </div>
+        </div>
+        <p class="proof" id="panelProof"></p>
+      </div>
+      <div class="panel-nav">
+        <button class="nav-btn" id="prevBtn" aria-label="Previous value pool">‹</button>
+        <div class="dots" id="dots"></div>
+        <button class="nav-btn" id="nextBtn" aria-label="Next value pool">›</button>
+      </div>
+    </aside>
+
+    <div class="hint" id="kbdHint">1–6 select · esc back · ← → cycle</div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
