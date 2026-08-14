@@ -334,6 +334,7 @@ function enterExperience() {
 function returnToIntro() {
   if (introOpen()) return;
   hideQr();
+  hideVideo();
   deselect();
   document.body.classList.add('intro-open');
   introVideo.currentTime = 0;
@@ -344,6 +345,55 @@ function returnToIntro() {
 el('begin').addEventListener('click', enterExperience);
 // Whole layer is tappable — kinder on a kiosk than hunting for the button.
 el('intro').addEventListener('click', enterExperience);
+
+/* ------------------------------------------------------------------ *
+ * Expanded video
+ *
+ * Tapping the panel thumbnail lifts the clip out to near-full screen. Works
+ * before the MP4s land too — the lightbox falls back to the same marked slot,
+ * so the interaction is demonstrable today.
+ * ------------------------------------------------------------------ */
+const lightbox = el('lightboxVideo');
+const videoOpen = () => document.body.classList.contains('video-open');
+
+async function showVideo() {
+  const pool = POOLS[state.selected];
+  if (!pool) return;
+
+  el('videoVerb').textContent = pool.verb;
+  el('videoTitle').textContent = pool.title;
+  el('videoEmptyHint').textContent = `public/media/${pool.id}.mp4`;
+  el('videoFrame').classList.remove('has-video');
+
+  document.body.classList.add('video-open');
+  el('videoLayer').setAttribute('aria-hidden', 'false');
+  dom.video.pause(); // no point decoding the thumbnail behind the overlay
+  state.lastInput = performance.now();
+
+  const url = await resolveVideo(pool.id);
+  // The visitor may have closed it, or moved on, while that resolved.
+  if (!url || !videoOpen() || POOLS[state.selected]?.id !== pool.id) return;
+  lightbox.src = url;
+  el('videoFrame').classList.add('has-video');
+  lightbox.currentTime = 0;
+  lightbox.play().catch(() => {});
+}
+
+function hideVideo() {
+  if (!videoOpen()) return;
+  document.body.classList.remove('video-open');
+  el('videoLayer').setAttribute('aria-hidden', 'true');
+  lightbox.pause();
+  if (dom.media.classList.contains('has-video')) dom.video.play().catch(() => {});
+  state.lastInput = performance.now();
+}
+
+dom.media.addEventListener('click', showVideo);
+el('videoClose').addEventListener('click', hideVideo);
+el('videoLayer').addEventListener('click', (e) => {
+  // Backdrop only — clicking the video itself must not dismiss it.
+  if (!e.target.closest('.video-stage')) hideVideo();
+});
 
 /* ------------------------------------------------------------------ *
  * Guidebook takeaway
@@ -429,6 +479,7 @@ function select(i) {
 
 function deselect() {
   if (state.selected < 0) return;
+  hideVideo();
   state.selected = -1;
   document.body.classList.remove('panel-open');
   dom.overview.classList.remove('hidden');
@@ -501,6 +552,10 @@ addEventListener('keydown', (e) => {
   }
   if (qrOpen()) {
     if (e.key === 'Escape') hideQr();
+    return;
+  }
+  if (videoOpen()) {
+    if (e.key === 'Escape') hideVideo();
     return;
   }
   if (e.key === 'Escape') return deselect();

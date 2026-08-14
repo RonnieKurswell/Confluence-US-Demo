@@ -100,6 +100,10 @@ public/media/ai-trust.mp4
 Specs and the full list live in [public/media/README.md](public/media/README.md).
 Short (10–20s), muted, 16:9, H.264.
 
+Tapping the thumbnail expands the clip to near-full screen. Dismiss with the
+close button, the backdrop, or `esc`. Before the MP4s land the expanded view
+shows the same marked slot, so the interaction still demos.
+
 ## Changing the words
 
 All copy — pool titles, verbs, hooks, bullets, the headline facts — lives in

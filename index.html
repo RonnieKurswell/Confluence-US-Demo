@@ -64,6 +64,29 @@
       </div>
     </aside>
 
+    <!-- Expanded video -->
+    <div class="video-layer" id="videoLayer" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="video-stage">
+        <button class="close video-close" id="videoClose" aria-label="Close video">
+          <span></span><span></span>
+        </button>
+        <div class="video-frame" id="videoFrame">
+          <video id="lightboxVideo" playsinline loop muted></video>
+          <div class="video-empty" id="videoEmpty">
+            <div class="media-icon">▶</div>
+            <div class="media-copy">
+              <strong>Video slot</strong>
+              <span id="videoEmptyHint"></span>
+            </div>
+          </div>
+        </div>
+        <div class="video-caption">
+          <span class="video-verb" id="videoVerb"></span>
+          <span class="video-title" id="videoTitle"></span>
+        </div>
+      </div>
+    </div>
+
     <!-- QR takeaway -->
     <div class="qr-layer" id="qrLayer" role="dialog" aria-modal="true" aria-hidden="true">
       <div class="qr-card">

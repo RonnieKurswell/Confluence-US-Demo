@@ -455,6 +455,7 @@ body.intro-open .hint {
 }
 
 .media {
+  cursor: pointer;
   position: relative;
   margin-top: clamp(22px, 3vh, 38px);
   aspect-ratio: 16 / 9;
@@ -659,6 +660,107 @@ body.intro-open .hint {
   line-height: 1;
   color: var(--accent);
 }
+/* ---------- expanded video ----------
+   Same overlay grammar as the QR: dim the room, put one thing on screen. */
+.video-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  display: grid;
+  place-items: center;
+  padding: clamp(20px, 4vh, 56px);
+  background: rgba(2, 4, 10, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+body.video-open .video-layer {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.video-stage {
+  width: min(94vw, 1180px);
+  transform: translateY(16px) scale(0.985);
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+body.video-open .video-stage {
+  transform: none;
+}
+
+.video-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  max-height: 74vh;
+  margin: 0 auto;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #05080f;
+  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.6),
+    0 0 90px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+.video-frame video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #05080f;
+  display: none;
+}
+.video-frame.has-video video {
+  display: block;
+}
+.video-frame.has-video .video-empty {
+  display: none;
+}
+/* Shown until the pool's MP4 exists, so the interaction is demonstrable now. */
+.video-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 1.6vh, 20px);
+  background:
+    radial-gradient(
+      110% 120% at 50% 40%,
+      color-mix(in srgb, var(--accent) 20%, transparent) 0%,
+      transparent 64%
+    ),
+    linear-gradient(158deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.012) 60%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+
+.video-caption {
+  display: flex;
+  align-items: baseline;
+  gap: 1em;
+  margin-top: clamp(14px, 2vh, 22px);
+  padding: 0 4px;
+}
+.video-verb {
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--t-eyebrow-track);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.video-title {
+  font-size: var(--t-lead);
+  color: var(--ink-soft);
+}
+
+.video-close {
+  position: fixed;
+  top: clamp(20px, 3vh, 42px);
+  right: clamp(24px, 3vw, 50px);
+}
+
 .qr-layer {
   position: fixed;
   inset: 0;
