@@ -97,8 +97,9 @@ public/media/physical-ai.mp4
 public/media/ai-trust.mp4
 ```
 
-Specs and the full list live in [public/media/README.md](public/media/README.md).
-Short (10–20s), muted, 16:9, H.264.
+Specs, the full list and the creative brief live in
+[public/media/README.md](public/media/README.md). 30–60s per pool, muted, 16:9,
+H.264, real-world visuals.
 
 Tapping the thumbnail expands the clip to near-full screen. Dismiss with the
 close button, the backdrop, or `esc`. Before the MP4s land the expanded view
