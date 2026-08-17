@@ -41,16 +41,7 @@
         <h1 class="title" id="panelTitle"></h1>
         <p class="hook" id="panelHook"></p>
         <ul class="bullets" id="panelBullets"></ul>
-        <div class="media" id="panelMedia">
-          <video id="panelVideo" playsinline muted loop preload="none"></video>
-          <div class="media-placeholder" id="mediaPlaceholder">
-            <div class="media-icon">▶</div>
-            <div class="media-copy">
-              <strong>Video slot</strong>
-              <span id="mediaHint"></span>
-            </div>
-          </div>
-        </div>
+        <div class="deck" id="panelDeck"></div>
         <p class="proof" id="panelProof"></p>
         <button class="guidebook-cta" id="guidebookCta">
           <span class="cta-icon" aria-hidden="true">⌖</span>
@@ -64,25 +55,38 @@
       </div>
     </aside>
 
-    <!-- Expanded video -->
+    <!-- Expanded video / case study -->
     <div class="video-layer" id="videoLayer" role="dialog" aria-modal="true" aria-hidden="true">
-      <div class="video-stage">
-        <button class="close video-close" id="videoClose" aria-label="Close video">
+      <div class="video-stage" id="videoStage">
+        <button class="close video-close" id="videoClose" aria-label="Close">
           <span></span><span></span>
         </button>
-        <div class="video-frame" id="videoFrame">
-          <video id="lightboxVideo" playsinline loop muted></video>
-          <div class="video-empty" id="videoEmpty">
-            <div class="media-icon">▶</div>
-            <div class="media-copy">
-              <strong>Video slot</strong>
-              <span id="videoEmptyHint"></span>
+        <div class="stage-media">
+          <div class="video-frame" id="videoFrame">
+            <video id="lightboxVideo" playsinline loop muted></video>
+            <img id="lightboxImage" alt="" />
+            <div class="video-empty" id="videoEmpty">
+              <div class="media-icon">▶</div>
+              <div class="media-copy">
+                <strong>Video slot</strong>
+                <span id="videoEmptyHint"></span>
+              </div>
             </div>
           </div>
+          <div class="video-caption" id="videoCaption">
+            <span class="video-verb" id="videoVerb"></span>
+            <span class="video-title" id="videoTitle"></span>
+          </div>
         </div>
-        <div class="video-caption">
-          <span class="video-verb" id="videoVerb"></span>
-          <span class="video-title" id="videoTitle"></span>
+        <div class="case-body" id="caseBody">
+          <span class="case-badge" id="caseBadge">Placeholder content</span>
+          <span class="case-client" id="caseClient"></span>
+          <h2 class="case-title" id="caseTitle"></h2>
+          <dl class="case-facts" id="caseFacts"></dl>
+          <div class="case-metric">
+            <span class="case-metric-value" id="caseMetricValue"></span>
+            <span class="case-metric-label" id="caseMetricLabel"></span>
+          </div>
         </div>
       </div>
     </div>

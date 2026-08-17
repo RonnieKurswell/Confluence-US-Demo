@@ -236,9 +236,7 @@ const dom = {
   hook: el('panelHook'),
   bullets: el('panelBullets'),
   proof: el('panelProof'),
-  media: el('panelMedia'),
-  video: el('panelVideo'),
-  mediaHint: el('mediaHint'),
+  deck: el('panelDeck'),
   dots: el('dots'),
   lockup: el('lockup'),
   prompt: el('prompt'),
@@ -284,17 +282,23 @@ async function resolveVideo(id) {
   return found;
 }
 
-async function loadMedia(pool) {
-  dom.media.classList.remove('has-video');
-  dom.video.removeAttribute('src');
-  dom.video.load();
-  dom.mediaHint.textContent = `public/media/${pool.id}.mp4`;
-
-  const url = await resolveVideo(pool.id);
-  if (!url || POOLS[state.selected]?.id !== pool.id) return;
-  dom.video.src = url;
-  dom.media.classList.add('has-video');
-  dom.video.play().catch(() => {});
+// Builds the pool's strip of thumbnails: the film first, then its case
+// studies. Tiles are static stills — the heavy playback lives in the lightbox.
+function buildDeck(pool) {
+  const base = import.meta.env.BASE_URL;
+  dom.deck.innerHTML = [
+    `<button class="tile tile-video" data-kind="video">
+       <span class="tile-play"><span>&#9654;</span></span>
+       <span class="tile-label">Value pool film</span>
+     </button>`,
+    ...pool.cases.map(
+      (c, i) => `<button class="tile" data-kind="case" data-index="${i}">
+         <img src="${base}media/cases/${c.id}.jpg" alt="" loading="lazy">
+         <span class="tile-label">${c.client}</span>
+       </button>`
+    ),
+  ].join('');
+  dom.deck.scrollLeft = 0;
 }
 
 /* ------------------------------------------------------------------ *
@@ -354,21 +358,25 @@ el('intro').addEventListener('click', enterExperience);
  * so the interaction is demonstrable today.
  * ------------------------------------------------------------------ */
 const lightbox = el('lightboxVideo');
+const lightboxImage = el('lightboxImage');
 const videoOpen = () => document.body.classList.contains('video-open');
+
+function openLayer() {
+  document.body.classList.add('video-open');
+  el('videoLayer').setAttribute('aria-hidden', 'false');
+  state.lastInput = performance.now();
+}
 
 async function showVideo() {
   const pool = POOLS[state.selected];
   if (!pool) return;
 
+  document.body.classList.remove('case-mode');
   el('videoVerb').textContent = pool.verb;
   el('videoTitle').textContent = pool.title;
   el('videoEmptyHint').textContent = `public/media/${pool.id}.mp4`;
-  el('videoFrame').classList.remove('has-video');
-
-  document.body.classList.add('video-open');
-  el('videoLayer').setAttribute('aria-hidden', 'false');
-  dom.video.pause(); // no point decoding the thumbnail behind the overlay
-  state.lastInput = performance.now();
+  el('videoFrame').classList.remove('has-video', 'has-image');
+  openLayer();
 
   const url = await resolveVideo(pool.id);
   // The visitor may have closed it, or moved on, while that resolved.
@@ -379,19 +387,49 @@ async function showVideo() {
   lightbox.play().catch(() => {});
 }
 
+function showCase(index) {
+  const pool = POOLS[state.selected];
+  const study = pool?.cases?.[index];
+  if (!study) return;
+
+  document.body.classList.add('case-mode');
+  el('caseBadge').hidden = !BRAND.casesArePlaceholder;
+  el('caseClient').textContent = study.client;
+  el('caseTitle').textContent = study.title;
+  el('caseFacts').innerHTML = [
+    ['Challenge', study.challenge],
+    ['What we did', study.action],
+    ['Outcome', study.outcome],
+  ]
+    .map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`)
+    .join('');
+  el('caseMetricValue').textContent = study.metric.value;
+  el('caseMetricLabel').textContent = study.metric.label;
+
+  lightbox.pause();
+  lightboxImage.src = `${import.meta.env.BASE_URL}media/cases/${study.id}.jpg`;
+  el('videoFrame').classList.remove('has-video');
+  el('videoFrame').classList.add('has-image');
+  openLayer();
+}
+
 function hideVideo() {
   if (!videoOpen()) return;
-  document.body.classList.remove('video-open');
+  document.body.classList.remove('video-open', 'case-mode');
   el('videoLayer').setAttribute('aria-hidden', 'true');
   lightbox.pause();
-  if (dom.media.classList.contains('has-video')) dom.video.play().catch(() => {});
   state.lastInput = performance.now();
 }
 
-dom.media.addEventListener('click', showVideo);
+dom.deck.addEventListener('click', (e) => {
+  const tile = e.target.closest('.tile');
+  if (!tile) return;
+  if (tile.dataset.kind === 'video') showVideo();
+  else showCase(Number(tile.dataset.index));
+});
 el('videoClose').addEventListener('click', hideVideo);
 el('videoLayer').addEventListener('click', (e) => {
-  // Backdrop only — clicking the video itself must not dismiss it.
+  // Backdrop only — clicking the media or the write-up must not dismiss it.
   if (!e.target.closest('.video-stage')) hideVideo();
 });
 
@@ -464,7 +502,7 @@ function select(i) {
   dom.proof.textContent = pool.proof;
   [...dom.dots.children].forEach((d, k) => d.classList.toggle('on', k === i));
 
-  loadMedia(pool);
+  buildDeck(pool);
 
   pools.forEach((p, k) => {
     p.targetLift = k === i ? 1 : -0.35;
@@ -486,7 +524,6 @@ function deselect() {
   dom.panel.classList.remove('open');
   dom.panel.setAttribute('aria-hidden', 'true');
   document.body.style.removeProperty('--accent');
-  dom.video.pause();
   pools.forEach((p) => {
     p.targetLift = 0;
     p.targetGlow = 0;

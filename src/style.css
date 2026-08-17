@@ -454,89 +454,102 @@ body.intro-open .hint {
   box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 70%, transparent);
 }
 
-.media {
-  cursor: pointer;
+/* ---------- media deck ----------
+   Video plus case studies as a swipeable strip of thumbnails, so a pool can
+   carry more than one thing to look at without growing the panel. */
+.deck {
+  display: flex;
+  gap: clamp(10px, 0.9vw, 16px);
+  margin-top: clamp(20px, 2.8vh, 34px);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+  /* Fades the strip out at the right edge so it reads as continuing. */
+  mask-image: linear-gradient(90deg, #000 0 88%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, #000 0 88%, transparent 100%);
+}
+.deck::-webkit-scrollbar {
+  display: none;
+}
+
+.tile {
   position: relative;
-  margin-top: clamp(22px, 3vh, 38px);
+  flex: 0 0 auto;
+  width: clamp(150px, 14.5vw, 218px);
   aspect-ratio: 16 / 9;
-  width: 100%;
-  /* Capped so the poster stays a thumbnail on a wide panel. */
-  max-width: clamp(320px, 34vw, 580px);
-  /* Video floats: no frame, just a soft shadow so it sits above the scene. */
   border-radius: 10px;
   overflow: hidden;
-  filter: drop-shadow(0 22px 48px rgba(0, 0, 0, 0.55));
+  cursor: pointer;
+  scroll-snap-align: start;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease;
 }
-.media video {
+.tile:hover {
+  transform: translateY(-3px);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent),
+    0 16px 34px rgba(0, 0, 0, 0.5);
+}
+.tile img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: none;
 }
-.media.has-video video {
-  display: block;
-}
-.media.has-video .media-placeholder {
-  display: none;
-}
-/* Poster tile: reads as a video thumbnail waiting for its file, not a hole in
-   the layout. Swapped out the moment a real MP4 resolves. */
-.media-placeholder {
+/* Keeps the label legible over any frame of the photography. */
+.tile::after {
+  content: "";
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(12px, 1.6vh, 20px);
-  background:
-    radial-gradient(
-      110% 120% at 50% 34%,
-      color-mix(in srgb, var(--accent) 26%, transparent) 0%,
-      transparent 62%
-    ),
-    linear-gradient(158deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.014) 58%),
-    linear-gradient(0deg, rgba(4, 7, 16, 0.55), rgba(4, 7, 16, 0.55));
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  background: linear-gradient(0deg, rgba(3, 6, 14, 0.86) 0%, rgba(3, 6, 14, 0.1) 52%);
 }
-.media-icon {
-  flex: 0 0 auto;
-  width: clamp(52px, 4.4vw, 76px);
-  height: clamp(52px, 4.4vw, 76px);
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  border: 1.5px solid color-mix(in srgb, var(--accent) 60%, transparent);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-  box-shadow: 0 0 34px color-mix(in srgb, var(--accent) 30%, transparent);
-  color: var(--accent);
-  font-size: clamp(15px, 1.2vw, 21px);
-  padding-left: 4px;
-}
-.media-copy {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  min-width: 0;
-  text-align: center;
-}
-.media-copy strong {
-  font-size: clamp(10px, 0.72vw, 12px);
-  letter-spacing: 0.28em;
+.tile-label {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 9px;
+  z-index: 2;
+  font-size: clamp(8.5px, 0.6vw, 10px);
+  font-weight: 700;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--ink);
-  opacity: 0.8;
+  opacity: 0.9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.media-copy span {
-  font-size: clamp(10px, 0.68vw, 11.5px);
-  letter-spacing: 0.02em;
-  color: var(--ink-soft);
-  opacity: 0.5;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  overflow-wrap: anywhere;
+.tile-play {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+}
+.tile-play span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding-left: 2px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--accent) 65%, transparent);
+  background: color-mix(in srgb, var(--accent) 16%, rgba(4, 7, 16, 0.5));
+  color: var(--accent);
+  font-size: 11px;
+}
+/* The video tile has no still to show until the MP4 lands. */
+.tile-video {
+  background:
+    radial-gradient(
+      110% 120% at 50% 40%,
+      color-mix(in srgb, var(--accent) 28%, transparent) 0%,
+      transparent 64%
+    ),
+    linear-gradient(158deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.015) 60%);
 }
 
 .proof {
@@ -689,6 +702,16 @@ body.video-open .video-layer {
 body.video-open .video-stage {
   transform: none;
 }
+/* Case mode puts the still beside the write-up; video mode stays full width. */
+body.case-mode .video-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: clamp(24px, 2.6vw, 52px);
+  align-items: center;
+}
+.stage-media {
+  min-width: 0;
+}
 
 .video-frame {
   position: relative;
@@ -702,19 +725,27 @@ body.video-open .video-stage {
   box-shadow: 0 40px 90px rgba(0, 0, 0, 0.6),
     0 0 90px color-mix(in srgb, var(--accent) 20%, transparent);
 }
-.video-frame video {
+.video-frame video,
+.video-frame img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
   background: #05080f;
   display: none;
 }
-.video-frame.has-video video {
+.video-frame video {
+  object-fit: contain;
+}
+.video-frame img {
+  object-fit: cover;
+}
+.video-frame.has-video video,
+.video-frame.has-image img {
   display: block;
 }
-.video-frame.has-video .video-empty {
+.video-frame.has-video .video-empty,
+.video-frame.has-image .video-empty {
   display: none;
 }
 /* Shown until the pool's MP4 exists, so the interaction is demonstrable now. */
@@ -735,6 +766,41 @@ body.video-open .video-stage {
     linear-gradient(158deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.012) 60%);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
 }
+.media-icon {
+  flex: 0 0 auto;
+  width: clamp(52px, 4.4vw, 76px);
+  height: clamp(52px, 4.4vw, 76px);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow: 0 0 34px color-mix(in srgb, var(--accent) 30%, transparent);
+  color: var(--accent);
+  font-size: clamp(15px, 1.2vw, 21px);
+  padding-left: 4px;
+}
+.media-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  text-align: center;
+}
+.media-copy strong {
+  font-size: var(--t-eyebrow);
+  letter-spacing: var(--t-eyebrow-track);
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.8;
+}
+.media-copy span {
+  font-size: clamp(10px, 0.68vw, 11.5px);
+  color: var(--ink-soft);
+  opacity: 0.5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  overflow-wrap: anywhere;
+}
 
 .video-caption {
   display: flex;
@@ -742,6 +808,9 @@ body.video-open .video-stage {
   gap: 1em;
   margin-top: clamp(14px, 2vh, 22px);
   padding: 0 4px;
+}
+body.case-mode .video-caption {
+  display: none;
 }
 .video-verb {
   font-size: var(--t-eyebrow);
@@ -753,6 +822,87 @@ body.video-open .video-stage {
 .video-title {
   font-size: var(--t-lead);
   color: var(--ink-soft);
+}
+
+/* ---- case study write-up ---- */
+.case-body {
+  display: none;
+  min-width: 0;
+}
+body.case-mode .case-body {
+  display: block;
+}
+/* States plainly that this is stand-in content, so nothing in the room reads
+   an invented study as a real client claim. */
+.case-badge {
+  display: inline-block;
+  padding: 0.5em 0.9em;
+  border: 1px solid rgba(255, 190, 120, 0.4);
+  border-radius: 999px;
+  background: rgba(255, 170, 80, 0.1);
+  color: #ffc98a;
+  font-size: clamp(9px, 0.62vw, 10.5px);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.case-client {
+  display: block;
+  margin-top: clamp(16px, 2.2vh, 26px);
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--t-eyebrow-track);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.case-title {
+  margin-top: clamp(8px, 1.2vh, 14px);
+  font-size: var(--t-title);
+  font-weight: 800;
+  line-height: var(--t-title-lh);
+  letter-spacing: -0.025em;
+}
+.case-facts {
+  margin-top: clamp(16px, 2.2vh, 26px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.5vh, 16px);
+}
+.case-facts dt {
+  font-size: clamp(9px, 0.62vw, 10.5px);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  opacity: 0.55;
+}
+.case-facts dd {
+  margin-top: 3px;
+  font-size: var(--t-body);
+  line-height: var(--t-body-lh);
+  color: var(--ink);
+}
+.case-metric {
+  margin-top: clamp(18px, 2.6vh, 30px);
+  padding-top: clamp(14px, 2vh, 22px);
+  border-top: 1px solid rgba(140, 195, 255, 0.16);
+  display: flex;
+  align-items: baseline;
+  gap: 0.7em;
+}
+.case-metric-value {
+  font-size: clamp(26px, 2.3vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #cbe9ff;
+  text-shadow: 0 0 26px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.case-metric-label {
+  font-size: var(--t-caption);
+  letter-spacing: var(--t-caption-track);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  opacity: 0.72;
 }
 
 .video-close {
@@ -958,6 +1108,24 @@ body.touch .hint { display: none; }
   }
   .fact .v { font-size: clamp(18px, 4.6vw, 26px); }
   .fact .l { font-size: clamp(8px, 1.9vw, 9.5px); white-space: normal; }
+
+  /* Stack the case study under its still on a tall screen. */
+  body.case-mode .video-stage {
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(18px, 2.4vh, 28px);
+    align-content: start;
+  }
+  .video-stage {
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .video-frame {
+    max-height: 40vh;
+  }
+  .tile {
+    width: clamp(140px, 42vw, 200px);
+  }
 
   /* Full-width in the sheet, where taps are thumb-driven. */
   .guidebook-cta {

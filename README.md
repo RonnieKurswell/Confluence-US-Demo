@@ -101,9 +101,16 @@ Specs, the full list and the creative brief live in
 [public/media/README.md](public/media/README.md). 30–60s per pool, muted, 16:9,
 H.264, real-world visuals.
 
-Tapping the thumbnail expands the clip to near-full screen. Dismiss with the
-close button, the backdrop, or `esc`. Before the MP4s land the expanded view
-shows the same marked slot, so the interaction still demos.
+Each pool carries a swipeable deck — the film first, then its case studies.
+Tapping any tile expands it to near-full screen; case studies open with their
+write-up beside the still. Dismiss with the close button, the backdrop, or
+`esc`. Before the MP4s land the expanded film shows the same marked slot, so the
+interaction still demos.
+
+**The case studies are placeholder** — invented text and AI-generated
+thumbnails standing in for the 403 client-masked studies Infosys is tagging.
+They carry a visible badge saying so. See
+[public/media/README.md](public/media/README.md).
 
 ## Changing the words
 

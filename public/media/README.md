@@ -37,9 +37,24 @@ At 30–60s these will be noticeably heavier than the 15 MB originally budgeted;
 six of them plus the intro is the bulk of the deployed size. Worth checking the
 total before the event if the demo is served over conference wifi.
 
-## Not yet built
+## Case studies
 
-Nitin's longer-term ask: **403 client-masked case studies** surfaced under each
-value pool (113 offerings already mapped, case study tagging in progress). The
-panel has no case study layer yet — that needs the tagged data before it can be
-designed.
+Each pool's panel now carries a swipeable deck: the value pool film first, then
+its case studies. Tapping any tile opens it full screen.
+
+`cases/<pool-id>-<n>.jpg` are the thumbnails. Text lives in `cases` on each pool
+in [../../src/data.js](../../src/data.js) — client, title, challenge, what we
+did, outcome, and a headline metric.
+
+> **All of it is placeholder.** The write-ups are invented stand-ins for the
+> **403 client-masked case studies** Infosys is tagging (113 offerings mapped so
+> far), and the thumbnails are AI-generated scenes, not photographs of real
+> client sites. The lightbox shows a **PLACEHOLDER CONTENT** badge so nobody in
+> the room reads them as real client claims.
+>
+> Set `BRAND.casesArePlaceholder = false` in `src/data.js` once real studies and
+> real photography are in — that removes the badge. Don't clear it before the
+> content is genuinely replaced.
+
+Thumbnails are 1280×720 JPEG, ~80 KB each. Three per pool keeps the deck
+scrolling without inventing more than necessary; the structure takes any number.
