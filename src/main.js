@@ -760,6 +760,30 @@ coreTitle.material.transparent = true;
 coreTitle.material.opacity = 1;
 requestAnimationFrame(tick);
 
+/* Deep link straight to a state — for review links and for capturing stills:
+ *   ?screen=overview | pool | video | case | qr   &pool=0-5  &case=0-2
+ * Transforms are snapped so a capture is never mid-animation. */
+(() => {
+  const q = new URLSearchParams(location.search);
+  const screen = q.get('screen');
+  if (!screen || screen === 'intro') return;
+
+  const clamp = (n, max) => Math.min(Math.max(Number(n) || 0, 0), max);
+  enterExperience();
+  if (screen !== 'overview') select(clamp(q.get('pool'), POOLS.length - 1));
+  if (screen === 'video') showVideo();
+  if (screen === 'case') showCase(clamp(q.get('case'), 2));
+  if (screen === 'qr') showQr();
+
+  Object.assign(current, target);
+  pools.forEach((p) => {
+    p.lift = p.targetLift;
+    p.glow = p.targetGlow;
+    p.dim = p.targetDim;
+  });
+  coreTitle.material.opacity = state.selected < 0 ? 1 : 0;
+})();
+
 // Handy while tuning the booth build; harmless in production.
 window.__demo = {
   state,
