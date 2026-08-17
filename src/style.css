@@ -460,18 +460,32 @@ body.intro-open .hint {
 .deck {
   display: flex;
   gap: clamp(10px, 0.9vw, 16px);
-  margin-top: clamp(20px, 2.8vh, 34px);
+  /* An overflow-x container clips the other axis too, so the hover lift and
+     its glow need real padding to live in — margin-top pulls that back. */
+  padding: 12px 2px 14px;
+  margin-top: calc(clamp(20px, 2.8vh, 34px) - 12px);
+  margin-bottom: -14px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
   scrollbar-width: none;
-  padding-bottom: 2px;
+  cursor: grab;
   /* Fades the strip out at the right edge so it reads as continuing. */
   mask-image: linear-gradient(90deg, #000 0 88%, transparent 100%);
   -webkit-mask-image: linear-gradient(90deg, #000 0 88%, transparent 100%);
 }
 .deck::-webkit-scrollbar {
   display: none;
+}
+/* Snap and smooth scrolling both fight a drag, so they are off mid-drag. */
+.deck.dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  scroll-behavior: auto;
+}
+.deck.dragging .tile {
+  pointer-events: none;
 }
 
 .tile {
@@ -1044,21 +1058,17 @@ body.touch .hint { display: none; }
   }
   .media { aspect-ratio: 16 / 9; margin-top: clamp(16px, 2vh, 24px); }
   .bullets { margin-top: clamp(14px, 2vh, 22px); }
-  /* The sheet is far narrower than the landscape column, so the one-line rule
-     would force the title down to an unreadable size. Two fixed lines keeps the
-     bullets locked here instead. */
+  /* Still one line each, just scaled to the sheet — so the bullets stay locked
+     without reserving a second line that most titles never use. */
   .title {
-    font-size: clamp(26px, 6.4vw, 42px);
-    white-space: normal;
-    min-height: calc(2em * var(--t-title-lh));
+    font-size: clamp(18px, 5.2vw, 40px);
   }
-  /* The sheet is too narrow to hold these on one line — let them wrap here. */
   .hook {
-    font-size: clamp(14px, 3.6vw, 19px);
-    white-space: normal;
-    min-height: calc(2em * var(--t-lead-lh));
+    font-size: clamp(13px, 3.2vw, 19px);
   }
-  .proof { white-space: normal; }
+  .proof {
+    font-size: clamp(9.5px, 2.2vw, 12.5px);
+  }
 
   /* Tall kiosk panel: the overview column unwinds back under the hexagon. */
   .overview {

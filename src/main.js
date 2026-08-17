@@ -422,10 +422,52 @@ function hideVideo() {
 }
 
 dom.deck.addEventListener('click', (e) => {
+  if (deckDragged) return; // that click was the end of a drag
   const tile = e.target.closest('.tile');
   if (!tile) return;
   if (tile.dataset.kind === 'video') showVideo();
   else showCase(Number(tile.dataset.index));
+});
+
+/* Deck scrolling: touch swipe works natively, so this adds the two a mouse
+ * needs — a vertical wheel drives the strip sideways, and it can be dragged. */
+let deckDragged = false;
+let deckDrag = null;
+
+dom.deck.addEventListener(
+  'wheel',
+  (e) => {
+    // Trackpads send horizontal deltas already; only remap a vertical wheel.
+    if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+    dom.deck.scrollLeft += e.deltaY;
+    e.preventDefault();
+    state.lastInput = performance.now();
+  },
+  { passive: false }
+);
+
+dom.deck.addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'touch') return; // native scrolling is better on touch
+  deckDrag = { x: e.clientX, scroll: dom.deck.scrollLeft };
+  deckDragged = false;
+});
+
+addEventListener('pointermove', (e) => {
+  if (!deckDrag) return;
+  const dx = e.clientX - deckDrag.x;
+  if (!deckDragged && Math.abs(dx) < 5) return; // let small wobbles stay clicks
+  deckDragged = true;
+  dom.deck.classList.add('dragging');
+  dom.deck.scrollLeft = deckDrag.scroll - dx;
+  state.lastInput = performance.now();
+});
+
+addEventListener('pointerup', () => {
+  if (!deckDrag) return;
+  deckDrag = null;
+  dom.deck.classList.remove('dragging');
+  // Cleared after the click event this pointerup will fire.
+  setTimeout(() => (deckDragged = false), 0);
 });
 el('videoClose').addEventListener('click', hideVideo);
 el('videoLayer').addEventListener('click', (e) => {
