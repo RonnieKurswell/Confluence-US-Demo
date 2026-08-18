@@ -12,6 +12,7 @@ import { createCoreViz } from './coreviz.js';
 const IDLE_RESET_MS = 60_000; // kiosk: drop back to the overview after a minute
 const ATTRACT_AFTER_MS = 9_000; // idle on the overview: start sweeping segments
 const INTRO_RETURN_MS = 90_000; // untouched for this long: back to the intro loop
+const WARP_MS = 2_000; // the 12s wormhole clip, compressed into the jump
 
 /* ------------------------------------------------------------------ *
  * Renderer, scene, camera
@@ -332,11 +333,13 @@ const introOpen = () => document.body.classList.contains('intro-open');
 function enterExperience() {
   if (!introOpen()) return;
   document.body.classList.remove('intro-open');
+  playWarp();
   state.lastInput = performance.now();
 }
 
 function returnToIntro() {
   if (introOpen()) return;
+  endWarp();
   hideQr();
   hideVideo();
   deselect();
@@ -345,6 +348,47 @@ function returnToIntro() {
   playIntro();
   state.lastInput = performance.now();
 }
+
+/* Warp transition — the wormhole clip played once on the way in.
+ *
+ * The source is 12s; playbackRate compresses it to WARP_MS so the whole jump
+ * happens in about two seconds. It is decorative and must never gate entry:
+ * a missing file, a blocked play() or a stalled decode all fall through to the
+ * framework, and any tap or key skips it. */
+const warpVideo = el('warpVideo');
+let warpTimer = null;
+
+resolveVideo('warp').then((url) => {
+  if (url) warpVideo.src = url;
+});
+
+function endWarp() {
+  if (!document.body.classList.contains('warp-open')) return;
+  clearTimeout(warpTimer);
+  warpTimer = null;
+  document.body.classList.remove('warp-open');
+  warpVideo.pause();
+  state.lastInput = performance.now();
+}
+
+function playWarp() {
+  if (!warpVideo.src) return false;
+  document.body.classList.add('warp-open');
+  warpVideo.currentTime = 0;
+  // Metadata is normally in by the time anyone reads the intro and clicks, but
+  // fall back to the source's own length rather than skipping the transition.
+  const seconds = warpVideo.readyState >= 1 && warpVideo.duration ? warpVideo.duration : 12;
+  // Chrome refuses rates above 16.
+  warpVideo.playbackRate = Math.min(16, seconds / (WARP_MS / 1000));
+  warpVideo.play().catch(() => endWarp());
+  // Belt and braces: 'ended' can be missed if the decode stalls.
+  clearTimeout(warpTimer);
+  warpTimer = setTimeout(endWarp, WARP_MS + 250);
+  return true;
+}
+
+warpVideo.addEventListener('ended', endWarp);
+el('warp').addEventListener('click', endWarp);
 
 el('begin').addEventListener('click', enterExperience);
 // Whole layer is tappable — kinder on a kiosk than hunting for the button.
@@ -625,6 +669,10 @@ canvas.addEventListener('pointerleave', () => (state.hovered = -1));
 
 addEventListener('keydown', (e) => {
   state.lastInput = performance.now();
+  if (document.body.classList.contains('warp-open')) {
+    endWarp();
+    return;
+  }
   if (introOpen()) {
     if (e.key === 'Enter' || e.key === ' ') enterExperience();
     return;

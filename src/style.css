@@ -209,6 +209,29 @@ body.intro-open .hint {
   pointer-events: none;
 }
 
+/* ---------- warp transition ----------
+   Covers everything for the jump between the intro and the framework. Fades in
+   fast so the cut is hidden, out slower so the board seems to arrive. */
+.warp {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
+}
+body.warp-open .warp {
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.12s ease;
+}
+.warp video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 /* ---------- overview ----------
    Occupies exactly the same column as the detail panel, so tapping a value
    pool swaps the copy in place instead of relocating the whole layout. */

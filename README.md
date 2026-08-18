@@ -67,6 +67,19 @@ The current loop is 1920x1080, 5s, 3 MB. It is deliberately dark and even, so
 the intro scrim and the `brightness()` on `.intro-video` are tuned light. Swap in
 a brighter clip and both need raising again or the copy will lose contrast.
 
+## The warp transition
+
+Pressing **Begin** plays `public/media/warp.mp4` once before the framework
+appears — a hexagonal wormhole that matches the board's geometry.
+
+The source is 12s. `WARP_MS` in [src/main.js](src/main.js) compresses it via
+`playbackRate`, currently to **2 seconds**; change that one constant to retime
+it. Keep it short — every second is a visitor standing at a booth waiting.
+
+It is decorative and can never block entry. A missing file, a blocked
+`play()` or a stalled decode all fall straight through to the framework, and any
+tap or key press skips it.
+
 ## The guidebook takeaway
 
 At the end of every pool panel there's a **Download the guidebook** button. It
