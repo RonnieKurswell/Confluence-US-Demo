@@ -119,9 +119,9 @@ body.intro-open .intro {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* The clip has bright frames; knocking it back keeps the copy legible
-     throughout the loop rather than only on the darker passages. */
-  filter: brightness(0.72) saturate(1.05);
+  /* This loop is already dark and even (luma ~82/255 throughout), so it needs
+     almost no knocking back — over-darkening just turned it to mud. */
+  filter: brightness(0.95) saturate(1.05);
   /* Shows through before the file loads, and stands in if it is missing. */
   background: radial-gradient(120% 100% at 50% 40%, #0e2044 0%, #06102a 45%, #03050c 100%);
 }
@@ -131,12 +131,12 @@ body.intro-open .intro {
   background:
     linear-gradient(
       90deg,
-      rgba(3, 6, 14, 0.93) 0%,
-      rgba(3, 6, 14, 0.78) 34%,
-      rgba(3, 6, 14, 0.38) 68%,
-      rgba(3, 6, 14, 0.28) 100%
+      rgba(3, 6, 14, 0.62) 0%,
+      rgba(3, 6, 14, 0.45) 34%,
+      rgba(3, 6, 14, 0.18) 68%,
+      rgba(3, 6, 14, 0.1) 100%
     ),
-    linear-gradient(0deg, rgba(3, 6, 14, 0.6) 0%, rgba(3, 6, 14, 0) 50%);
+    linear-gradient(0deg, rgba(3, 6, 14, 0.45) 0%, rgba(3, 6, 14, 0) 50%);
 }
 
 .intro-content {
@@ -1159,11 +1159,11 @@ body.touch .hint { display: none; }
     background:
       radial-gradient(
         95% 46% at 50% 52%,
-        rgba(3, 6, 14, 0.88) 0%,
-        rgba(3, 6, 14, 0.55) 62%,
-        rgba(3, 6, 14, 0.35) 100%
+        rgba(3, 6, 14, 0.66) 0%,
+        rgba(3, 6, 14, 0.34) 62%,
+        rgba(3, 6, 14, 0.18) 100%
       ),
-      linear-gradient(0deg, rgba(3, 6, 14, 0.8) 0%, rgba(3, 6, 14, 0.3) 45%, rgba(3, 6, 14, 0.55) 100%);
+      linear-gradient(0deg, rgba(3, 6, 14, 0.55) 0%, rgba(3, 6, 14, 0.15) 45%, rgba(3, 6, 14, 0.35) 100%);
   }
 }
 

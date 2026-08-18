@@ -63,6 +63,10 @@ avconvert --source "/path/to/new-clip.mov" --preset Preset1920x1080 --output pub
 Keep it silent and seamless — it loops muted and autoplays. If the file is
 missing the intro still renders over its gradient, so the demo never breaks.
 
+The current loop is 1920x1080, 5s, 3 MB. It is deliberately dark and even, so
+the intro scrim and the `brightness()` on `.intro-video` are tuned light. Swap in
+a brighter clip and both need raising again or the copy will lose contrast.
+
 ## The guidebook takeaway
 
 At the end of every pool panel there's a **Download the guidebook** button. It
