@@ -10,6 +10,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { POOLS, BRAND, PALETTE } from './data.js';
 import { buildHexagon, R } from './hex.js';
 import { createCoreViz } from './coreviz.js';
+import { createConstellation } from './constellation.js';
 
 const IDLE_RESET_MS = 60_000; // kiosk: drop back to the overview after a minute
 const ATTRACT_AFTER_MS = 9_000; // idle on the overview: start sweeping segments
@@ -106,6 +107,12 @@ scene.add(particles);
  * ------------------------------------------------------------------ */
 const world = new THREE.Group();
 scene.add(world);
+
+// The stats screen gets its own field: hexagons drifting in depth, the lattice
+// the framework is built from before it resolves into the board.
+const constellation = createConstellation();
+scene.add(constellation.object);
+let statsIn = 0;
 
 // Canvas text falls back silently if the face has not loaded, and the board
 // bakes its labels into textures once — so wait for Geist before building.
@@ -293,6 +300,7 @@ const dom = {
   dots: el('dots'),
   lockup: el('lockup'),
   prompt: el('prompt'),
+  poolHint: el('poolHint'),
 };
 
 el('brandLine').textContent = BRAND.brandLine;
@@ -321,8 +329,14 @@ el('introSub').textContent = BRAND.intro.sub;
 el('beginLabel').textContent = BRAND.intro.cta;
 el('overviewHeadline').innerHTML = BRAND.headline.join('<br>');
 el('overviewSub').textContent = BRAND.subhead;
+el('overviewEyebrow').textContent = BRAND.statsEyebrow;
 el('facts').innerHTML = BRAND.facts
-  .map((f) => `<div class="fact"><span class="v">${f.value}</span><span class="l">${f.label}</span></div>`)
+  .map(
+    (f, i) => `<div class="fact">
+       <span class="fact-index">${String(i + 1).padStart(2, '0')}</span>
+       <span class="fact-body"><span class="v">${f.value}</span><span class="l">${f.label}</span></span>
+     </div>`
+  )
   .join('');
 
 dom.dots.innerHTML = POOLS.map((_, i) => `<i data-i="${i}"></i>`).join('');
@@ -714,9 +728,8 @@ function deselect() {
 
 const cycle = (dir) => select((state.selected + dir + POOLS.length) % POOLS.length);
 
-el('close').addEventListener('click', deselect);
-el('prevBtn').addEventListener('click', () => cycle(-1));
-el('nextBtn').addEventListener('click', () => cycle(1));
+// No Back button any more — tapping outside the pool returns to the board, and
+// a horizontal swipe moves between pools. Both are hinted under the object.
 
 /* ------------------------------------------------------------------ *
  * Pointer + keyboard input
@@ -744,8 +757,16 @@ canvas.addEventListener('pointerdown', (e) => {
 canvas.addEventListener('pointerup', (e) => {
   state.lastInput = performance.now();
   if (!down) return;
-  const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
+  const dx = e.clientX - down.x;
+  const dy = e.clientY - down.y;
+  const moved = Math.hypot(dx, dy);
   down = null;
+
+  // A deliberate horizontal drag moves between pools rather than selecting.
+  if (state.selected >= 0 && Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+    cycle(dx < 0 ? 1 : -1);
+    return;
+  }
   if (moved > 14) return; // treat as a drag, not a tap
   const i = poolAt(e.clientX, e.clientY);
   if (i >= 0) select(i);
@@ -802,6 +823,7 @@ const clock = new THREE.Clock();
 const projected = new THREE.Vector3();
 let boardIn = 0; // 0 while the intro or stats page is up, 1 on the board
 const promptAt = { x: -1, y: -1 };
+const hintAt = { x: -1, y: -1 };
 
 function tick() {
   const dt = Math.min(clock.getDelta(), 0.05);
@@ -879,6 +901,10 @@ function tick() {
   boardIn = damp(boardIn, wantBoard, 6, dt);
   world.visible = boardIn > 0.01;
 
+  // The constellation trades places with it.
+  statsIn = damp(statsIn, statsOpen() ? 1 : 0, 3.2, dt);
+  constellation.update(t, statsIn);
+
   const boardAlpha = damp(core.userData.alpha ?? 1, state.selected < 0 ? 1 : 0, 9, dt);
   core.userData.alpha = boardAlpha;
   core.visible = boardAlpha > 0.01;
@@ -903,6 +929,22 @@ function tick() {
       promptAt.y = py;
       dom.prompt.style.left = `${px}px`;
       dom.prompt.style.top = `${py}px`;
+    }
+  }
+
+  // Same trick for the pool instruction: project the inner edge of the open
+  // sector so the line sits just under the object however it is rolled.
+  if (state.selected >= 0) {
+    const th = (pools[state.selected].theta * Math.PI) / 180;
+    projected.set(Math.cos(th) * R * 0.5, Math.sin(th) * R * 0.5, 0);
+    hexGroup.localToWorld(projected).project(camera);
+    const px = Math.round((projected.x * 0.5 + 0.5) * innerWidth);
+    const py = Math.round((-projected.y * 0.5 + 0.5) * innerHeight) + 44;
+    if (px !== hintAt.x || py !== hintAt.y) {
+      hintAt.x = px;
+      hintAt.y = py;
+      dom.poolHint.style.left = `${px}px`;
+      dom.poolHint.style.top = `${py}px`;
     }
   }
 

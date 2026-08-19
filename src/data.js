@@ -18,8 +18,10 @@ export const BRAND = {
     { value: '6', label: 'interconnected value pools, one path' },
   ],
   // One entry per line — the break is deliberate, not left to the measure.
+  statsEyebrow: 'The AI-first value framework',
   headline: ['Six value pools.', 'Deeply interconnected.'],
-  subhead: 'Beyond experimentation, into scale.',
+  subhead:
+    'A structured path to orchestrate data, technology and operations at scale — beyond experimentation, into the enterprise.',
   continueCta: 'Explore the framework',
 
   // Case studies below are invented stand-ins for the 403 client-masked studies

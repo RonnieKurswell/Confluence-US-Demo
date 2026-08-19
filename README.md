@@ -35,7 +35,8 @@ stick, a local folder, or any static host — no network needed.
 | **Begin** (or tap anywhere on the intro, or Enter/Space) | Plays the warp, lands on the stats page |
 | **Explore the framework** (or Enter/Space) | Leaves the stats page for the hexagon |
 | Tap / click a segment | Opens that value pool |
-| **Back**, or tapping outside the pool | Returns to the hexagon |
+| Tapping outside the pool | Returns to the hexagon |
+| Swiping horizontally | Moves to the next / previous pool |
 | `1`–`6` | Jump straight to a pool (presenter shortcut) |
 | `←` `→` | Cycle pools |
 | `esc` | Back to the overview |
@@ -94,7 +95,9 @@ light version is what the dark background needs.
 
 1. **Intro** — looping video, centred headline and Begin
 2. **Warp** — the wormhole, naming each pool as it flies past
-3. **Stats** — headline and the three proof points, with a Continue control
+3. **Stats** — a centred title card over a drifting hexagon field
+   ([src/constellation.js](src/constellation.js)), with the three proof points
+   as one divided row and a Continue control
 4. **Hexagon** — the board, touch a value pool
 5. **Value pool** — sector pushed to centre and zoomed, copy on the left
 
@@ -187,7 +190,8 @@ Each pool also names its centre visual via `viz`. The six procedural scenes
 
 Selecting a pool pushes that sector to the middle of the free space, rolls it
 square and zooms in, while the other five fade out. Detail copy appears on the
-left with a **Back** control. `FOCUS_SCALE` in [src/main.js](src/main.js) sets
+left. There is no Back button — an instruction under the object says to swipe
+between pools or tap outside to return, which keeps the chrome off the screen. `FOCUS_SCALE` in [src/main.js](src/main.js) sets
 how far it zooms; the damping is tuned so the move settles in about half a
 second, which is the responsiveness the brief asks for.
 

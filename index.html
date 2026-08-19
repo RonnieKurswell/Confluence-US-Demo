@@ -29,6 +29,7 @@
 
     <!-- Stats page: shown after the warp, before the hexagon -->
     <section class="overview" id="overview">
+      <span class="overview-eyebrow" id="overviewEyebrow"></span>
       <h1 class="overview-headline" id="overviewHeadline"></h1>
       <p class="overview-sub" id="overviewSub"></p>
       <div class="facts" id="facts"></div>
@@ -41,32 +42,34 @@
     <!-- Detail panel -->
     <aside class="panel" id="panel" aria-hidden="true">
       <div class="panel-inner">
-        <button class="back" id="close" aria-label="Back to the framework">
-          <span class="back-arrow" aria-hidden="true">←</span>
-          <span>Back</span>
-        </button>
         <div class="verb" id="panelVerb"></div>
         <h1 class="title" id="panelTitle"></h1>
         <p class="hook" id="panelHook"></p>
         <ul class="bullets" id="panelBullets"></ul>
-        <div class="panel-media" id="panelMedia"></div>
-        <button class="cases-cta" id="casesCta">
-          <span class="cases-count" id="casesCount"></span>
-          <span id="casesLabel"></span>
-          <span class="cases-arrow" aria-hidden="true">→</span>
-        </button>
         <p class="proof" id="panelProof"></p>
-        <button class="guidebook-cta" id="guidebookCta">
-          <span class="cta-icon" aria-hidden="true">⌖</span>
-          <span id="ctaLabel"></span>
-        </button>
+        <div class="panel-media" id="panelMedia"></div>
+        <div class="panel-actions">
+          <button class="cases-cta" id="casesCta">
+            <span class="cases-count" id="casesCount"></span>
+            <span id="casesLabel"></span>
+            <span class="cases-arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="guidebook-cta" id="guidebookCta">
+            <span class="cta-icon" aria-hidden="true">⌖</span>
+            <span id="ctaLabel"></span>
+          </button>
+        </div>
       </div>
       <div class="panel-nav">
-        <button class="nav-btn" id="prevBtn" aria-label="Previous value pool">‹</button>
         <div class="dots" id="dots"></div>
-        <button class="nav-btn" id="nextBtn" aria-label="Next value pool">›</button>
       </div>
     </aside>
+
+    <div class="pool-hint" id="poolHint">
+      <span class="pool-hint-swipe">Swipe to change pool</span>
+      <span class="pool-hint-dot" aria-hidden="true">·</span>
+      <span>Tap outside to go back</span>
+    </div>
 
     <!-- Warp transition, played once when Begin is pressed -->
     <div class="warp" id="warp" aria-hidden="true">
