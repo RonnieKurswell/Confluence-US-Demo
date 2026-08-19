@@ -732,14 +732,12 @@ body.panel-open .prompt {
 
 .hook {
   margin-top: clamp(14px, 1.9vh, 22px);
-  font-family: var(--font-display);
-  font-size: clamp(17px, 1.5vw, 27px);
-  font-weight: 500;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
-  color: var(--ink);
-  white-space: nowrap;
-  text-shadow: 0 1px 20px rgba(0, 0, 0, 0.6);
+  font-size: clamp(15px, 1.18vw, 21px);
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: 46ch;
+  /* Two lines for every pool, so what follows never shifts. */
+  min-height: calc(2em * 1.5);
 }
 
 .bullets {
@@ -781,9 +779,10 @@ body.panel-open .prompt {
 
 .panel-media {
   position: relative;
+  max-width: clamp(224px, 24vw, 392px);
   margin-top: clamp(20px, 2.8vh, 34px);
   width: 100%;
-  max-width: clamp(320px, 34vw, 560px);
+  max-width: clamp(224px, 24vw, 392px);
   aspect-ratio: 16 / 9;
   border-radius: 10px;
   overflow: hidden;
@@ -813,6 +812,55 @@ body.panel-open .prompt {
 .panel-media.has-video video {
   display: block;
 }
+/* Fills the thumbnail and centres the badge over it. This rule was lost when
+   the media deck was replaced, leaving the badge in normal flow, top left. */
+.media-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 0 clamp(12px, 1.4vw, 22px);
+}
+/* Stand-in poster frame, with a scrim so the badge and caption hold over it. */
+.media-poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.media-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+      0deg,
+      rgba(4, 7, 16, 0.86) 0%,
+      rgba(4, 7, 16, 0.34) 46%,
+      rgba(4, 7, 16, 0.42) 100%
+    ),
+    radial-gradient(
+      70% 70% at 50% 45%,
+      color-mix(in srgb, var(--accent) 16%, transparent) 0%,
+      transparent 70%
+    );
+}
+
+/* The badge itself is centred; the caption hangs below it so it does not
+   push the button off centre. */
+.media-placeholder .media-copy {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: clamp(12px, 1.6vh, 20px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0 clamp(12px, 1.4vw, 22px);
+}
+
 .panel-media.has-video .media-placeholder {
   display: none;
 }
@@ -947,17 +995,6 @@ body.cases-open .case-card:nth-child(3) { transition-delay: 0.12s; }
   color: var(--ink);
 }
 
-.proof {
-  margin-top: clamp(16px, 2.2vh, 26px);
-  padding-top: clamp(14px, 1.9vh, 20px);
-  border-top: 1px solid rgba(140, 195, 255, 0.12);
-  font-size: var(--t-caption);
-  line-height: var(--t-caption-lh);
-  letter-spacing: 0.02em;
-  color: var(--ink-soft);
-  opacity: 0.62;
-  white-space: nowrap;
-}
 
 /* close + nav */
 
@@ -1146,6 +1183,8 @@ body.case-mode .video-stage {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
 }
 .media-icon {
+  position: relative;
+  z-index: 2;
   flex: 0 0 auto;
   width: clamp(52px, 4.4vw, 76px);
   height: clamp(52px, 4.4vw, 76px);
@@ -1436,9 +1475,6 @@ body.touch .hint { display: none; }
   }
   .hook {
     font-size: clamp(13px, 3.2vw, 19px);
-  }
-  .proof {
-    font-size: clamp(9.5px, 2.2vw, 12.5px);
   }
 
   /* Tall kiosk panel: the overview column unwinds back under the hexagon. */

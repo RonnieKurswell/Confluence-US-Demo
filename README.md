@@ -142,7 +142,9 @@ Specs, the full list and the creative brief live in
 [public/media/README.md](public/media/README.md). 30–60s per pool, muted, 16:9,
 H.264, real-world visuals.
 
-The film sits inline in the panel and expands to near-full screen on tap. Case
+The film sits inline in the panel, showing that pool's generated scene as a
+stand-in poster frame until the real MP4 lands, and expands to near-full screen
+on tap. Case
 studies are one step behind their own control, opening a full-screen gallery;
 picking one shows its write-up beside the still, and closing returns to the
 gallery rather than all the way out.

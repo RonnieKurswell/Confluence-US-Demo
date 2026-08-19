@@ -305,7 +305,6 @@ const dom = {
   title: el('panelTitle'),
   hook: el('panelHook'),
   bullets: el('panelBullets'),
-  proof: el('panelProof'),
   media: el('panelMedia'),
   dots: el('dots'),
   lockup: el('lockup'),
@@ -380,9 +379,13 @@ async function resolveVideo(id) {
 // so the two are not competing for the same strip.
 function buildMedia(pool) {
   dom.media.classList.remove('has-video');
+  // Until the real films land, the pool's own generated scene stands in as a
+  // poster frame so the panel reads the way it will with video in place.
   dom.media.innerHTML = `
     <video playsinline muted loop preload="none"></video>
     <div class="media-placeholder">
+      <img class="media-poster" src="${import.meta.env.BASE_URL}media/cases/${pool.id}-1.jpg" alt="" loading="lazy">
+      <div class="media-scrim"></div>
       <div class="media-icon">&#9654;</div>
       <div class="media-copy">
         <strong>Value pool film</strong>
@@ -696,9 +699,8 @@ function select(i) {
 
   dom.verb.textContent = pool.verb;
   dom.title.textContent = pool.title;
-  dom.hook.textContent = pool.hook;
+  dom.hook.textContent = pool.description;
   dom.bullets.innerHTML = pool.bullets.map((b) => `<li>${b}</li>`).join('');
-  dom.proof.textContent = pool.proof;
   [...dom.dots.children].forEach((d, k) => d.classList.toggle('on', k === i));
 
   buildMedia(pool);

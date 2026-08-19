@@ -56,5 +56,9 @@ did, outcome, and a headline metric.
 > real photography are in — that removes the badge. Don't clear it before the
 > content is genuinely replaced.
 
+The first image of each set (`<pool-id>-1.jpg`) doubles as the **poster frame**
+for that pool's film slot, so the panel reads the way it will once the real
+video is in place. Dropping in `<pool-id>.mp4` replaces it automatically.
+
 Thumbnails are 1280×720 JPEG, ~80 KB each. Three per pool keeps the deck
 scrolling without inventing more than necessary; the structure takes any number.

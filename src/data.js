@@ -48,13 +48,13 @@ export const POOLS = [
     id: 'data-for-ai',
     verb: 'INSIGHT',
     title: 'Data for AI',
-    hook: 'Raw data becomes a trusted, model-ready asset.',
+    description:
+      'Raw enterprise data becomes a trusted, model-ready asset, so analytics and prediction run on one version of the truth.',
     bullets: [
       'AI-ready data platforms',
       'Fingerprinting & synthetic data',
       'Real-time, predictive decisions',
     ],
-    proof: 'Structured and unstructured data, made model-ready.',
     cases: [
       {
         id: 'data-for-ai-1',
@@ -91,13 +91,13 @@ export const POOLS = [
     id: 'ai-strategy-engineering',
     verb: 'ORCHESTRATE',
     title: 'AI Strategy & Engineering',
-    hook: 'One AI operating model, not a hundred pilots.',
+    description:
+      'One enterprise-wide AI operating model rather than a hundred disconnected pilots, on infrastructure built for it.',
     bullets: [
       'Agents, platforms & tools in concert',
       'Purpose-built AI infrastructure',
       'Architecture tailored to the business',
     ],
-    proof: 'Past experimentation, into an enterprise operating model.',
     cases: [
       {
         id: 'ai-strategy-engineering-1',
@@ -134,13 +134,13 @@ export const POOLS = [
     id: 'ai-trust',
     verb: 'ASSURE',
     title: 'AI Trust',
-    hook: 'Responsible, secure AI across the lifecycle.',
+    description:
+      'Responsible, secure and governed AI across the whole lifecycle, so it can scale without outrunning its guardrails.',
     bullets: [
       'Risk assessment & policy design',
       'Security testing for agents',
       'Governance that meets regulation',
     ],
-    proof: 'Responsible, secure and ethical AI, by construction.',
     cases: [
       {
         id: 'ai-trust-1',
@@ -177,13 +177,13 @@ export const POOLS = [
     id: 'physical-ai',
     verb: 'INNOVATE',
     title: 'Physical AI',
-    hook: 'Digital meets physical, acting in real time.',
+    description:
+      'Intelligence embedded in products and operations, reading sensor signal and acting on it in real time.',
     bullets: [
       'Sensor signal to real-world action',
       'Digital twins, robotics, autonomy',
       'Edge intelligence inside products',
     ],
-    proof: 'Reimagined products where digital and physical converge.',
     cases: [
       {
         id: 'physical-ai-1',
@@ -220,13 +220,13 @@ export const POOLS = [
     id: 'agentic-legacy-modernization',
     verb: 'MODERNIZE',
     title: 'Agentic Legacy Modernization',
-    hook: 'Agents read your legacy estate and rebuild it.',
+    description:
+      'Agents read the legacy estate, recover what it was built to do, and modernise it without a big-bang rewrite.',
     bullets: [
       'Reverse-engineer legacy systems',
       'Progressive, zero-disruption change',
       'Less technical debt, more agility',
     ],
-    proof: 'Modernize without a big-bang rewrite.',
     cases: [
       {
         id: 'agentic-legacy-modernization-1',
@@ -263,13 +263,13 @@ export const POOLS = [
     id: 'process-ai',
     verb: 'TRANSFORM',
     title: 'Process AI',
-    hook: 'Workflows redesigned around agents and people.',
+    description:
+      'End-to-end workflows redesigned around domain-aware agents working alongside the people who own the outcome.',
     bullets: [
       'Domain-aware agents',
       'Human expertise in the loop',
       'Step-change in efficiency & experience',
     ],
-    proof: 'Business outcomes across every function and industry.',
     cases: [
       {
         id: 'process-ai-1',
