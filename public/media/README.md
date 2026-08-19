@@ -85,3 +85,9 @@ left half kept empty for the copy column. 1600x900 JPEG, ~130 KB each.
 
 Placeholder like the rest: generated, not shot. They are the least urgent thing
 here to replace — they are meant to be barely noticed.
+
+If you replace one, **check it against the others for brightness**. The set is
+normalised so all six read at the same strength (~57 mean luminance over the open
+right side), and that correction is baked into the files rather than applied at
+runtime. A raw generated plate dropped in next to these will look either invisible
+or far too hot.

@@ -169,19 +169,36 @@ so each pool has a sense of place instead of all six sharing one black void. The
 framework overview and the intro carry none — the board stays neutral, and the
 place arrives with the pool.
 
-For this the renderer clears **transparent** (`alpha: true`, `scene.background =
-null`) and the page itself carries the base colour. The scrim over the plates in
-`.pool-bg::after` is doing real work: it guarantees a contrast floor for the copy
-whatever the image behind it does, so it stays heaviest on the left in landscape
-and rolls to the bottom in portrait where the copy becomes a sheet. If a plate
-ever fights the words, lift that scrim rather than dimming the plate.
+The plates are **quads inside the 3D scene**, parked at `PLATE_Z` behind
+everything, cross-fading against each other. The obvious approach — a DOM image
+behind a transparent canvas — does not work here and it is worth knowing why: the
+post-processing chain (bloom, output pass) writes **opaque alpha**, so the canvas
+paints over whatever sits behind it no matter what `alpha: true` promises. The
+symptom is that every pool looks like the same starry void. In the scene there is
+no compositing question at all.
 
-Missing files simply show nothing, the same resolve-if-present behaviour as the
-videos, so the demo never breaks on a bad filename.
+Two knobs:
 
-**These are placeholder**, generated with `openai/gpt-image-2` — abstract, very
-dark, one accent hue each, with the left half deliberately empty. 1600x900 JPEG,
-800 KB for all six.
+- `PLATE_OPACITY` in [src/main.js](src/main.js) — how strongly a plate reads,
+  currently `0.8`. Exposed as `__demo.platePair` for tuning at the venue.
+- `.pool-bg` in [src/style.css](src/style.css) — the scrim over the top, which
+  guarantees a contrast floor for the copy whatever the plate does. Heaviest on
+  the left in landscape, rolling to the bottom in portrait where the copy becomes
+  a sheet. **If a plate ever fights the words, lift the scrim rather than dimming
+  the plate.**
+
+A missing texture leaves the quad blank and the base colour shows, the same
+resolve-if-present behaviour as the videos, so a bad filename never breaks it.
+
+**These are placeholder**, generated with `openai/gpt-image-2` — abstract, one
+accent hue each, with the left half deliberately empty for the copy.
+
+They were generated far too dark to see (17-34 mean luminance on their open side,
+against a page ground of ~6) and then normalised: each plate is brightness-scaled
+so all six land at the same ~57 mean, measured rather than eyeballed, so no pool
+reads noticeably stronger than its neighbours. That correction is **baked into
+the files**, which is why they should be re-measured if any one of them is
+replaced. 1600x900 JPEG, ~580 KB for all six.
 
 They are **stills, not video**. Six looping background clips would add tens of
 megabytes on top of the intro, the warp and the six pool films, on a bundle that

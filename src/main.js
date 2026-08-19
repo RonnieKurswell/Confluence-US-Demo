@@ -22,22 +22,14 @@ const FOCUS_SCALE = 2.1; // how far the board zooms when a pool is opened
  * Renderer, scene, camera
  * ------------------------------------------------------------------ */
 const canvas = document.getElementById('stage');
-// alpha, so the per-pool background plates behind the canvas show through. The
-// page itself carries the base colour, and the fog still fades to it.
-const renderer = new THREE.WebGLRenderer({
-  canvas,
-  antialias: true,
-  alpha: true,
-  powerPreference: 'high-performance',
-});
-renderer.setClearAlpha(0);
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const scene = new THREE.Scene();
-scene.background = null;
+scene.background = new THREE.Color(PALETTE.bg);
 scene.fog = new THREE.Fog(PALETTE.bg, 26, 52);
 
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
@@ -175,16 +167,70 @@ const ringLine = new THREE.LineLoop(
 );
 hexGroup.add(ringLine);
 
-/* Per-pool background plates. Built up front so all six are decoded before
- * anyone swipes; a missing file just shows nothing. */
-const bgPlates = POOLS.map((pool) => {
-  const plate = document.createElement('div');
-  plate.className = 'pool-bg-plate';
-  plate.style.backgroundImage = `url("${import.meta.env.BASE_URL}media/backgrounds/${pool.id}.jpg")`;
-  document.getElementById('poolBg').append(plate);
-  return plate;
+/* Per-pool background plates.
+ *
+ * These live INSIDE the scene rather than as a DOM layer behind the canvas. The
+ * obvious approach — a transparent canvas over an <img> — does not work here:
+ * the post-processing chain writes opaque alpha, so the canvas paints over
+ * whatever sits behind it no matter what `alpha: true` promises. In the scene
+ * there is no compositing question at all.
+ *
+ * Two quads parked well behind everything, cross-faded against each other, so
+ * moving between pools dissolves rather than cuts. A missing texture just leaves
+ * the quad empty and the base colour shows, the same resolve-if-present
+ * behaviour as the videos. */
+const PLATE_Z = -30;
+// How strongly a plate reads. The full-strength plate was too bright behind the
+// copy, so it sits at 80%. Live on __demo for tuning at the venue.
+const PLATE_OPACITY = 0.8;
+const plateLoader = new THREE.TextureLoader();
+const plateTextures = POOLS.map((pool) => {
+  const tex = plateLoader.load(
+    `${import.meta.env.BASE_URL}media/backgrounds/${pool.id}.jpg`,
+    undefined,
+    undefined,
+    () => {} // missing file is not an error, it just stays blank
+  );
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
 });
-const setPoolBg = (i) => bgPlates.forEach((p, k) => p.classList.toggle('on', k === i));
+
+const platePair = [0, 1].map(() => {
+  const mat = new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    // depthTest stays ON: this quad fills the frame, and with the test off it
+    // would paint over any opaque geometry drawn before it in the transparent
+    // phase. Parked at PLATE_Z it is behind everything anyway.
+    toneMapped: false,
+    fog: false,
+  });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat);
+  mesh.position.z = PLATE_Z;
+  mesh.renderOrder = -10; // behind the starfield and the board
+  mesh.visible = false;
+  scene.add(mesh);
+  return mesh;
+});
+// Which of the pair is currently showing, and what each is fading toward.
+const plateState = { front: 0, target: [0, 0] };
+
+function setPoolBg(i) {
+  const tex = i >= 0 ? plateTextures[i] : null;
+  if (tex && platePair[plateState.front].material.map === tex) return;
+  if (!tex) {
+    plateState.target = [0, 0];
+    return;
+  }
+  // Bring the idle quad in with the new plate and retire the other.
+  const next = 1 - plateState.front;
+  platePair[next].material.map = tex;
+  platePair[next].material.needsUpdate = true;
+  platePair[next].visible = true;
+  plateState.front = next;
+  plateState.target = next === 0 ? [PLATE_OPACITY, 0] : [0, PLATE_OPACITY];
+}
 
 const vizCache = new Map();
 function vizFor(i) {
@@ -265,6 +311,12 @@ function applyTargets() {
   const half = Math.tan((camera.fov * Math.PI) / 360);
   const worldW = 2 * camera.position.z * half * camera.aspect;
   const worldH = 2 * camera.position.z * half;
+
+  // Background plates fill the frustum at their own depth, which is further from
+  // the camera than the board, so they need their own measure.
+  const plateD = camera.position.z - PLATE_Z;
+  const plateH = 2 * plateD * half;
+  platePair.forEach((mesh) => mesh.scale.set(plateH * camera.aspect, plateH, 1));
 
   // Centre of the space the copy column leaves free. The column is on the left,
   // so the board lives to the right of it.
@@ -1019,6 +1071,14 @@ function tick() {
   current.roll = damp(current.roll, target.roll, 4.2, dt);
   current.labelFlip = damp(current.labelFlip, target.labelFlip, 4.2, dt);
 
+  // Cross-fade the background plates. Held back with the board, so the intro and
+  // the stats page stay on the plain ground.
+  platePair.forEach((mesh, k) => {
+    const want = plateState.target[k] * (state.selected < 0 ? 0 : 1) * boardIn;
+    mesh.material.opacity = damp(mesh.material.opacity, want, 2.6, dt);
+    mesh.visible = mesh.material.opacity > 0.004;
+  });
+
   world.position.set(current.x, current.y, 0);
   world.scale.setScalar(current.scale);
   world.rotation.set(current.tiltX + Math.sin(t * 0.21) * 0.02, current.tiltY + current.spin, current.roll);
@@ -1170,6 +1230,7 @@ window.__demo = {
   stopTour,
   tour,
   TOUR_HOLD,
+  platePair,
   select,
   deselect,
   current,
