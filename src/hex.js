@@ -197,7 +197,7 @@ export function buildHexagon() {
       BANDS.outer.labelR,
       R * 0.8,
       R * 0.16,
-      { lines: wrapTitle(pool.title), size: 96, weight: 700, width: 1024, height: 205 }
+      { lines: wrapTitle(pool.title), size: 96, weight: 500, width: 1024, height: 205 }
     );
     const verbLabel = labelMesh(pool.verb, theta, BANDS.inner.labelR, R * 0.52, R * 0.095, {
       size: 78,
@@ -267,7 +267,7 @@ export function buildHexagon() {
       map: makeTextTexture('', {
         lines: ['UNLOCK', 'AI VALUE'],
         size: 128,
-        weight: 800,
+        weight: 500,
         width: 1024,
         height: 420,
         tracking: 4,

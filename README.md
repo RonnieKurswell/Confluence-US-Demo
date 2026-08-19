@@ -151,8 +151,9 @@ They carry a visible badge saying so. See
 
 ## Type
 
-Geist for display — headlines, pool titles, the big numbers, and every control
-— and Inter for body copy, mirroring the split on the Infosys site. Both are
+Geist for display — headlines, pool titles and every control — and Inter for
+body copy, mirroring the split on the Infosys site. Titles are **Geist Medium
+(500)**, not bold; tracking was relaxed to suit the lighter weight. Both are
 self-hosted, so the booth machine needs no network: Geist's weights sit in
 `public/fonts/`, Inter comes in through `@fontsource-variable/inter`.
 

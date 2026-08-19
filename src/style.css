@@ -197,9 +197,9 @@ body.intro-open .intro {
 .intro-headline {
   font-family: var(--font-display);
   font-size: var(--t-display);
-  font-weight: 800;
+  font-weight: 500;
   line-height: var(--t-display-lh);
-  letter-spacing: -0.035em;
+  letter-spacing: -0.02em;
   text-shadow: 0 4px 46px rgba(0, 0, 0, 0.7);
 }
 .intro-sub {
@@ -290,8 +290,8 @@ body.warp-open .warp {
   font-family: var(--font-display);
   grid-area: 1 / 1;
   font-size: clamp(24px, 3vw, 52px);
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-weight: 500;
+  letter-spacing: -0.01em;
   color: #eaf3ff;
   text-align: center;
   text-shadow: 0 0 40px rgba(53, 208, 245, 0.55);
@@ -406,9 +406,9 @@ body.panel-open .prompt {
   font-family: var(--font-display);
   margin-top: clamp(16px, 2.2vh, 28px);
   font-size: var(--t-title);
-  font-weight: 800;
+  font-weight: 500;
   line-height: var(--t-title-lh);
-  letter-spacing: -0.025em;
+  letter-spacing: -0.015em;
   color: var(--ink);
   text-shadow: 0 2px 30px rgba(0, 0, 0, 0.6);
 }
@@ -556,9 +556,9 @@ body.panel-open .prompt {
   font-family: var(--font-display);
   margin-top: clamp(14px, 1.9vh, 24px);
   font-size: var(--t-title);
-  font-weight: 800;
+  font-weight: 500;
   line-height: var(--t-title-lh);
-  letter-spacing: -0.025em;
+  letter-spacing: -0.015em;
   /* Sized so the longest name (Agentic Legacy Modernization) fits on one. */
   white-space: nowrap;
   text-shadow: 0 2px 34px rgba(0, 0, 0, 0.65);
@@ -717,9 +717,9 @@ body.cases-open .cases-layer {
   font-family: var(--font-display);
   margin-top: 8px;
   font-size: var(--t-title);
-  font-weight: 800;
+  font-weight: 500;
   line-height: var(--t-title-lh);
-  letter-spacing: -0.025em;
+  letter-spacing: -0.015em;
 }
 .cases-grid {
   display: grid;
@@ -1117,9 +1117,9 @@ body.case-mode .case-body {
   font-family: var(--font-display);
   margin-top: clamp(8px, 1.2vh, 14px);
   font-size: var(--t-title);
-  font-weight: 800;
+  font-weight: 500;
   line-height: var(--t-title-lh);
-  letter-spacing: -0.025em;
+  letter-spacing: -0.015em;
 }
 .case-facts {
   margin-top: clamp(16px, 2.2vh, 26px);
@@ -1231,9 +1231,9 @@ body.qr-open .qr-card {
   font-family: var(--font-display);
   margin-top: clamp(22px, 3vh, 36px);
   font-size: var(--t-title);
-  font-weight: 800;
+  font-weight: 500;
   line-height: var(--t-title-lh);
-  letter-spacing: -0.025em;
+  letter-spacing: -0.015em;
 }
 .qr-sub {
   margin-top: clamp(10px, 1.4vh, 16px);
