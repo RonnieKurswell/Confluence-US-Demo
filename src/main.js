@@ -781,9 +781,33 @@ el('qrLayer').addEventListener('click', (e) => {
 /* ------------------------------------------------------------------ *
  * Selection
  * ------------------------------------------------------------------ */
+/* Replays the panel's staggered entrance.
+ *
+ * `dir` is the direction of travel, so the copy enters from the side the visitor
+ * swiped from: +1 moving forward through the pools, -1 back, 0 on first open.
+ * The class has to be removed and re-added around a forced reflow, otherwise the
+ * browser sees no change and the animation does not restart. */
+function replayPanelSwap(dir) {
+  const inner = dom.panel.querySelector('.panel-inner');
+  inner.classList.remove('panel-swap');
+  void inner.offsetWidth; // reflow, so the animation is genuinely restarted
+  inner.style.setProperty('--swap-dir', String(dir));
+  inner.classList.add('panel-swap');
+}
+
+// Shortest way round the ring, so stepping 6 -> 1 reads as forward, not back.
+function swapDirection(from, to) {
+  if (from < 0) return 0;
+  let d = to - from;
+  if (d > POOLS.length / 2) d -= POOLS.length;
+  if (d < -POOLS.length / 2) d += POOLS.length;
+  return Math.sign(d);
+}
+
 function select(i) {
   setPoolBg(i);
   if (i === state.selected) return;
+  const dir = swapDirection(state.selected, i);
   state.selected = i;
   state.attract = -1;
 
@@ -814,6 +838,8 @@ function select(i) {
   vizCache.forEach((v, k) => (v.object.visible = k === i));
   vizFor(i).object.visible = true;
   applyTargets();
+  // Last, so the freshly built media node is included in the stagger.
+  replayPanelSwap(dir);
 }
 
 function deselect() {

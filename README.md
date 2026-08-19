@@ -161,6 +161,24 @@ there is no image to regenerate.
 The CTA deliberately does **not** appear on the framework overview; it shows up
 only once a visitor has opened a value pool and read something.
 
+## Moving between pools
+
+The board eases between pools over about half a second. The copy used to be
+replaced in a single frame, so the words and the thumbnail snapped while the
+object glided, which read as mechanical. Each block now enters on a short
+stagger — verb, title, description, the three bullets one after another, then the
+film slot and the actions — and it enters **from the direction of travel**, so
+swiping forward and swiping back feel different. The poster gets a little scale
+on top so the film slot lands rather than appears.
+
+It is **enter-only**, deliberately. A true cross-fade means holding the new copy
+back until the old has left, and a booth cannot afford to feel laggy; the board
+moving underneath covers the cut. `replayPanelSwap()` in
+[src/main.js](src/main.js) restarts it, and the timings are the
+`animation-delay`s under `.panel-swap` in [src/style.css](src/style.css).
+
+Respects `prefers-reduced-motion`.
+
 ## Per-pool backgrounds
 
 Each value pool has its own background plate in `public/media/backgrounds/`,

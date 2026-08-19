@@ -1740,3 +1740,82 @@ body.panel-open .pool-bg {
       radial-gradient(120% 60% at 50% 32%, rgba(4, 6, 14, 0) 0%, rgba(4, 6, 14, 0.2) 88%);
   }
 }
+
+/* ---------- panel swap animation ----------
+   The board eases between pools over about half a second, but the copy used to
+   be replaced in a single frame, so the words and the thumbnail snapped while
+   the object glided. Each block now enters on a short stagger, in the direction
+   of travel, which is what stops the swap reading as mechanical.
+
+   Enter-only, deliberately: a true cross-fade would mean holding the new copy
+   back until the old had left, and a booth cannot afford to feel laggy. The
+   board is still moving underneath, which covers the cut. */
+.panel-swap > * {
+  animation: panelIn 460ms cubic-bezier(0.16, 0.84, 0.3, 1) both;
+}
+@keyframes panelIn {
+  from {
+    opacity: 0;
+    transform: translate3d(calc(var(--swap-dir, 0) * 30px), 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+/* Reading order, so the eye is led down the column rather than hit all at once. */
+.panel-swap > .verb {
+  animation-delay: 0ms;
+}
+.panel-swap > .title {
+  animation-delay: 45ms;
+}
+.panel-swap > .hook {
+  animation-delay: 90ms;
+}
+.panel-swap > .bullets {
+  animation-delay: 0ms;
+}
+.panel-swap > .panel-media {
+  animation-delay: 215ms;
+}
+.panel-swap > .panel-actions {
+  animation-delay: 280ms;
+}
+/* Bullets carry their own stagger inside the list. */
+.panel-swap .bullets li {
+  animation: panelIn 420ms cubic-bezier(0.16, 0.84, 0.3, 1) both;
+}
+.panel-swap .bullets li:nth-child(1) {
+  animation-delay: 130ms;
+}
+.panel-swap .bullets li:nth-child(2) {
+  animation-delay: 168ms;
+}
+.panel-swap .bullets li:nth-child(3) {
+  animation-delay: 206ms;
+}
+.panel-swap .bullets li:nth-child(n + 4) {
+  animation-delay: 244ms;
+}
+/* The poster gets a touch of scale on top, so the film slot feels like it lands
+   rather than appears. */
+.panel-swap > .panel-media .media-poster {
+  animation: posterIn 620ms cubic-bezier(0.16, 0.84, 0.3, 1) both;
+  animation-delay: 215ms;
+}
+@keyframes posterIn {
+  from {
+    transform: scale(1.06);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel-swap > *,
+  .panel-swap .bullets li,
+  .panel-swap > .panel-media .media-poster {
+    animation: none;
+  }
+}
