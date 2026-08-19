@@ -400,7 +400,7 @@ body.warp-open .warp-names span {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: clamp(96px, 12vh, 132px) clamp(28px, 3.4vw, 72px) clamp(28px, 4vh, 64px);
+  padding: clamp(28px, 4vh, 64px) clamp(28px, 3.4vw, 72px);
   /* No card, no frame — the copy floats straight over the scene. A whisper of
      a scrim keeps small text legible against the starfield. */
   background: linear-gradient(
@@ -686,9 +686,9 @@ body.cases-open .case-card:nth-child(3) { transition-delay: 0.12s; }
 
 /* close + nav */
 .back {
-  position: absolute;
-  top: clamp(20px, 2.6vh, 36px);
-  left: clamp(28px, 3.4vw, 72px);
+  /* In the flow, above the copy — absolute placement collided with the lockup. */
+  align-self: flex-start;
+  margin-bottom: clamp(18px, 2.4vh, 30px);
   display: inline-flex;
   align-items: center;
   gap: 0.7em;
