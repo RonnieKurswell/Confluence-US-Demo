@@ -942,25 +942,21 @@ function tick() {
     }
   }
 
-  // The instruction sits below the open sector, clear of its lowest point.
-  if (state.selected >= 0) {
+  // The instruction stays pinned to the bottom of the screen — tracking each
+  // sector's own extent moved it around between pools, which read as a bug.
+  // Only the horizontal centre follows the board.
+  if (state.selected >= 0 && !state.isPortrait) {
     const pool = pools[state.selected];
-    let bottom = -Infinity;
     let sumX = 0;
     for (const corner of pool.corners) {
       projected.copy(corner);
       hexGroup.localToWorld(projected).project(camera);
-      const sy = (-projected.y * 0.5 + 0.5) * innerHeight;
       sumX += (projected.x * 0.5 + 0.5) * innerWidth;
-      if (sy > bottom) bottom = sy;
     }
     const px = Math.round(sumX / pool.corners.length);
-    const py = Math.round(bottom) + 34;
-    if (px !== hintAt.x || py !== hintAt.y) {
+    if (px !== hintAt.x) {
       hintAt.x = px;
-      hintAt.y = py;
       dom.poolHint.style.left = `${px}px`;
-      dom.poolHint.style.top = `${py}px`;
     }
   }
 

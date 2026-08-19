@@ -259,8 +259,8 @@ body.stats-open .hint {
    are shown as well as named — a static line of text was being ignored. */
 .pool-hint {
   position: fixed;
-  left: 0;
-  top: 0;
+  left: 50%;
+  bottom: clamp(26px, 4.6vh, 58px);
   transform: translateX(-50%);
   z-index: 10;
   display: flex;
@@ -1491,6 +1491,12 @@ body.touch .hint { display: none; }
   }
   .tile {
     width: clamp(140px, 42vw, 200px);
+  }
+
+  .pool-hint {
+    left: 50%;
+    bottom: auto;
+    top: calc(34vh - 58px);
   }
 
   /* Full-width in the sheet, where taps are thumb-driven. */
