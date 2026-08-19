@@ -21,7 +21,7 @@ export const BRAND = {
   statsEyebrow: 'The AI-first value framework',
   headline: ['Six value pools.', 'Deeply interconnected.'],
   subhead:
-    'A structured path to orchestrate data, technology and operations at scale — beyond experimentation, into the enterprise.',
+    'A structured path to orchestrate data, technology and operations at scale. Beyond experimentation, into the enterprise.',
   continueCta: 'Explore the framework',
 
   // Case studies below are invented stand-ins for the 403 client-masked studies

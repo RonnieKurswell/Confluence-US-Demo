@@ -584,7 +584,7 @@ function showCases() {
   const pool = POOLS[state.selected];
   if (!pool) return;
   el('casesVerb').textContent = pool.verb;
-  el('casesTitle').textContent = `${pool.title} — case studies`;
+  el('casesTitle').textContent = `${pool.title} case studies`;
   el('casesGrid').innerHTML = pool.cases
     .map(
       (c, i) => `<button class="case-card" data-index="${i}">
