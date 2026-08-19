@@ -133,6 +133,16 @@ pools.forEach((p) => {
   p.materials.forEach((m) => (m.transparent = true));
   p.fade = 1;
   p.targetFade = 1;
+
+  // Corners of the sector in board space, captured while `world` is still
+  // untransformed. Projecting these each frame gives the sector's true screen
+  // extent — the trapezoid maths alone under-measured it and the instruction
+  // ended up sitting on the object.
+  const box = new THREE.Box3().setFromObject(p.holder);
+  p.corners = [];
+  for (const x of [box.min.x, box.max.x])
+    for (const y of [box.min.y, box.max.y])
+      for (const z of [box.min.z, box.max.z]) p.corners.push(new THREE.Vector3(x, y, z));
 });
 
 // A hex ring tracing the inner boundary — the "deeply interconnected" idea,
@@ -932,14 +942,20 @@ function tick() {
     }
   }
 
-  // Same trick for the pool instruction: project the inner edge of the open
-  // sector so the line sits just under the object however it is rolled.
+  // The instruction sits below the open sector, clear of its lowest point.
   if (state.selected >= 0) {
-    const th = (pools[state.selected].theta * Math.PI) / 180;
-    projected.set(Math.cos(th) * R * 0.5, Math.sin(th) * R * 0.5, 0);
-    hexGroup.localToWorld(projected).project(camera);
-    const px = Math.round((projected.x * 0.5 + 0.5) * innerWidth);
-    const py = Math.round((-projected.y * 0.5 + 0.5) * innerHeight) + 44;
+    const pool = pools[state.selected];
+    let bottom = -Infinity;
+    let sumX = 0;
+    for (const corner of pool.corners) {
+      projected.copy(corner);
+      hexGroup.localToWorld(projected).project(camera);
+      const sy = (-projected.y * 0.5 + 0.5) * innerHeight;
+      sumX += (projected.x * 0.5 + 0.5) * innerWidth;
+      if (sy > bottom) bottom = sy;
+    }
+    const px = Math.round(sumX / pool.corners.length);
+    const py = Math.round(bottom) + 34;
     if (px !== hintAt.x || py !== hintAt.y) {
       hintAt.x = px;
       hintAt.y = py;
@@ -1005,5 +1021,8 @@ window.__demo = {
   deselect,
   current,
   target,
+  camera,
+  hexGroup,
+  R,
   snap: () => Object.assign(current, target),
 };

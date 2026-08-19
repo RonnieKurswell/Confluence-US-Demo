@@ -255,7 +255,8 @@ body.stats-open .hint {
   pointer-events: none;
 }
 
-/* Instruction under the open pool — replaces the Back button. */
+/* Instruction under the open pool, in place of a Back button. Both gestures
+   are shown as well as named — a static line of text was being ignored. */
 .pool-hint {
   position: fixed;
   left: 0;
@@ -264,32 +265,113 @@ body.stats-open .hint {
   z-index: 10;
   display: flex;
   align-items: center;
-  gap: 0.7em;
+  gap: clamp(16px, 1.8vw, 30px);
+  padding: 0.85em 1.5em;
+  border-radius: 999px;
+  background: rgba(4, 7, 16, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   white-space: nowrap;
-  font-family: var(--font-display);
-  font-size: var(--t-eyebrow);
-  font-weight: 500;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.5s ease;
 }
 body.panel-open .pool-hint {
-  opacity: 0.5;
+  opacity: 1;
 }
 body.qr-open .pool-hint,
 body.video-open .pool-hint,
 body.cases-open .pool-hint {
   opacity: 0;
 }
-.pool-hint-dot {
-  opacity: 0.5;
+
+.hint-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
 }
-.pool-hint-swipe {
-  color: var(--accent);
+.hint-label {
+  font-family: var(--font-display);
+  font-size: var(--t-eyebrow);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
   opacity: 0.85;
+}
+.hint-sep {
+  width: 1px;
+  height: 1.5em;
+  background: rgba(140, 195, 255, 0.22);
+}
+
+.hint-icon {
+  position: relative;
+  width: 30px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+/* The fingertip. */
+.hint-finger {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 90%, transparent);
+}
+/* Swipe: the fingertip runs the track and resets. */
+.hint-track {
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  right: 2px;
+  height: 1px;
+  margin-top: -0.5px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(140, 195, 255, 0.5),
+    transparent
+  );
+}
+.hint-finger--swipe {
+  animation: hintSwipe 2.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+@keyframes hintSwipe {
+  0%, 8% { transform: translateX(-9px); opacity: 0; }
+  18% { opacity: 1; }
+  55% { transform: translateX(9px); opacity: 1; }
+  70%, 100% { transform: translateX(9px); opacity: 0; }
+}
+/* Tap: the fingertip presses and a ring goes out from it. */
+.hint-finger--tap {
+  animation: hintTap 2.4s cubic-bezier(0.34, 1.4, 0.5, 1) infinite;
+}
+@keyframes hintTap {
+  0%, 30% { transform: scale(1); }
+  40% { transform: scale(0.62); }
+  55%, 100% { transform: scale(1); }
+}
+.hint-ripple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  opacity: 0;
+  animation: hintRipple 2.4s ease-out infinite;
+}
+@keyframes hintRipple {
+  0%, 38% { transform: scale(0.35); opacity: 0; }
+  48% { opacity: 0.7; }
+  85%, 100% { transform: scale(1.25); opacity: 0; }
 }
 
 /* ---------- warp transition ----------
