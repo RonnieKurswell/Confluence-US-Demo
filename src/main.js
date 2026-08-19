@@ -218,9 +218,11 @@ function applyTargets() {
   const freeCentreX = (worldW * state.panelFraction) / 2;
 
   if (state.selected < 0) {
-    target.x = state.isPortrait ? 0 : worldW * state.panelFraction * 0.38;
-    target.y = state.isPortrait ? worldH * 0.09 : 0;
-    target.scale = state.isPortrait ? 1 : 1 - state.panelFraction * 0.38;
+    // Nothing shares the hexagon screen any more — the stats moved to their own
+    // page — so the board sits centred rather than shifted off a column.
+    target.x = 0;
+    target.y = state.isPortrait ? worldH * 0.04 : 0;
+    target.scale = 1;
     target.tiltX = 0;
     target.tiltY = 0;
     target.roll = 0;

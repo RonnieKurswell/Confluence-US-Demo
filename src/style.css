@@ -455,7 +455,8 @@ body.panel-open .prompt {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: clamp(28px, 4vh, 64px) clamp(28px, 3.4vw, 72px);
+  /* Top padding clears the fixed brand lockup so Back sits below it. */
+  padding: clamp(84px, 11vh, 124px) clamp(28px, 3.4vw, 72px) clamp(28px, 4vh, 64px);
   /* No card, no frame — the copy floats straight over the scene. A whisper of
      a scrim keeps small text legible against the starfield. */
   background: linear-gradient(
