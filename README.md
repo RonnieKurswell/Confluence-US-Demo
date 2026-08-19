@@ -32,7 +32,8 @@ stick, a local folder, or any static host — no network needed.
 
 | Input | What it does |
 | --- | --- |
-| **Begin** (or tap anywhere on the intro, or Enter/Space) | Enters the framework |
+| **Begin** (or tap anywhere on the intro, or Enter/Space) | Plays the warp, lands on the stats page |
+| **Explore the framework** (or Enter/Space) | Leaves the stats page for the hexagon |
 | Tap / click a segment | Opens that value pool |
 | **Back**, or tapping outside the pool | Returns to the hexagon |
 | `1`–`6` | Jump straight to a pool (presenter shortcut) |
@@ -78,6 +79,27 @@ it. Keep it short — every second is a visitor standing at a booth waiting.
 It is decorative and can never block entry. A missing file, a blocked
 `play()` or a stalled decode all fall straight through to the framework, and any
 tap or key press skips it.
+
+## Brand lockup
+
+Top left, on every screen: the Infosys mark, a hairline rule, then the demo's
+name. The line itself is `BRAND.brandLine` in [src/data.js](src/data.js).
+
+The mark is currently a **text stand-in**. Save the real logo as
+`public/media/brand-logo.svg` (or `.png`) and it swaps itself in — same
+resolve-if-present pattern as the videos, no code change needed. A white or
+light version is what the dark background needs.
+
+## Screen order
+
+1. **Intro** — looping video, Begin
+2. **Warp** — the wormhole, naming each pool as it flies past
+3. **Stats** — headline and the three proof points, with a Continue control
+4. **Hexagon** — the board, touch a value pool
+5. **Value pool** — sector pushed to centre and zoomed, copy on the left
+
+The board is held back entirely until the stats page is dismissed, so stages 3
+and 4 read as separate screens rather than one crowded one.
 
 ## The guidebook takeaway
 

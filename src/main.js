@@ -283,10 +283,33 @@ const dom = {
   prompt: el('prompt'),
 };
 
-el('eyebrow').textContent = BRAND.eyebrow;
-el('event').textContent = BRAND.event;
-el('introEyebrow').textContent = BRAND.eyebrow;
-el('introEvent').textContent = BRAND.event;
+el('brandLine').textContent = BRAND.brandLine;
+el('introBrandLine').textContent = BRAND.brandLine;
+el('continueLabel').textContent = BRAND.continueCta;
+
+// Save the real mark as public/media/brand-logo.svg (or .png) and it replaces
+// the text stand-in automatically, the same way the videos resolve.
+(async () => {
+  for (const ext of ['svg', 'png']) {
+    const url = `${import.meta.env.BASE_URL}media/brand-logo.${ext}`;
+    try {
+      const res = await fetch(url, { method: 'HEAD' });
+      const type = res.headers.get('content-type') || '';
+      if (!res.ok || !type.startsWith('image/')) continue;
+      for (const [img, word] of [
+        ['brandLogo', 'brandWord'],
+        ['introBrandLogo', 'introBrandWord'],
+      ]) {
+        el(img).src = url;
+        el(img).hidden = false;
+        el(word).hidden = true;
+      }
+      return;
+    } catch {
+      /* keep the text stand-in */
+    }
+  }
+})();
 el('introHeadline').textContent = BRAND.intro.headline;
 el('introSub').textContent = BRAND.intro.sub;
 el('beginLabel').textContent = BRAND.intro.cta;
@@ -379,12 +402,21 @@ const introOpen = () => document.body.classList.contains('intro-open');
 function enterExperience() {
   if (!introOpen()) return;
   document.body.classList.remove('intro-open');
-  playWarp();
+  // If the warp cannot run, land on the stats page anyway.
+  if (!playWarp()) document.body.classList.add('stats-open');
+  state.lastInput = performance.now();
+}
+
+const statsOpen = () => document.body.classList.contains('stats-open');
+
+function leaveStats() {
+  document.body.classList.remove('stats-open');
   state.lastInput = performance.now();
 }
 
 function returnToIntro() {
   if (introOpen()) return;
+  document.body.classList.remove('stats-open');
   endWarp();
   hideQr();
   hideVideo();
@@ -414,6 +446,8 @@ function endWarp() {
   clearTimeout(warpTimer);
   warpTimer = null;
   document.body.classList.remove('warp-open');
+  // The warp lands on the stats page, not straight on the board.
+  if (!introOpen()) document.body.classList.add('stats-open');
   warpVideo.pause();
   state.lastInput = performance.now();
 }
@@ -445,6 +479,7 @@ document.documentElement.style.setProperty('--warp-name-ms', `${Math.round(WARP_
 warpVideo.addEventListener('ended', endWarp);
 el('warp').addEventListener('click', endWarp);
 
+el('continue').addEventListener('click', leaveStats);
 el('begin').addEventListener('click', enterExperience);
 // Whole layer is tappable — kinder on a kiosk than hunting for the button.
 el('intro').addEventListener('click', enterExperience);
@@ -741,6 +776,10 @@ addEventListener('keydown', (e) => {
     if (e.key === 'Escape') hideCases();
     return;
   }
+  if (statsOpen()) {
+    if (e.key === 'Enter' || e.key === ' ') leaveStats();
+    return;
+  }
   if (e.key === 'Escape') return deselect();
   if (e.key === 'ArrowRight') return cycle(1);
   if (e.key === 'ArrowLeft') return cycle(-1);
@@ -755,6 +794,7 @@ addEventListener('pointerdown', () => (state.lastInput = performance.now()), tru
 const damp = (a, b, lambda, dt) => a + (b - a) * (1 - Math.exp(-lambda * dt));
 const clock = new THREE.Clock();
 const projected = new THREE.Vector3();
+let boardIn = 0; // 0 while the intro or stats page is up, 1 on the board
 const promptAt = { x: -1, y: -1 };
 
 function tick() {
@@ -808,11 +848,11 @@ function tick() {
     p.fade = damp(p.fade ?? 1, p.targetFade ?? 1, 9, dt);
 
     p.holder.visible = p.fade > 0.01;
-    p.materials.forEach((m) => (m.opacity = p.fade));
-    p.labels.forEach((l) => (l.material.opacity = p.fade * (0.18 + p.dim * 0.82)));
+    p.materials.forEach((m) => (m.opacity = p.fade * boardIn));
+    p.labels.forEach((l) => (l.material.opacity = p.fade * boardIn * (0.18 + p.dim * 0.82)));
 
     p.holder.position.z = p.lift * 0.85 + (state.selected < 0 ? Math.sin(t * 0.8 + i) * 0.045 : 0);
-    p.rimMesh.material.opacity = p.glow * 0.9 * p.fade;
+    p.rimMesh.material.opacity = p.glow * 0.9 * p.fade * boardIn;
     p.materials.forEach((m, k) => {
       // Navy ring stays neutral at rest; the pool's accent only washes in on
       // hover / select so the board reads as one system.
@@ -828,14 +868,19 @@ function tick() {
 
   // Core plate and ring belong to the hexagon view; they clear out when a pool
   // takes over the screen.
+  // The whole board is held back until the stats page is dismissed.
+  const wantBoard = introOpen() || statsOpen() ? 0 : 1;
+  boardIn = damp(boardIn, wantBoard, 6, dt);
+  world.visible = boardIn > 0.01;
+
   const boardAlpha = damp(core.userData.alpha ?? 1, state.selected < 0 ? 1 : 0, 9, dt);
   core.userData.alpha = boardAlpha;
   core.visible = boardAlpha > 0.01;
-  corePlateMat.opacity = boardAlpha;
+  corePlateMat.opacity = boardAlpha * boardIn;
 
   // Centre: the title fades out as a pool's visual takes over.
   const showTitle = state.selected < 0 ? 1 : 0;
-  coreTitle.material.opacity = damp(coreTitle.material.opacity, showTitle, 9, dt);
+  coreTitle.material.opacity = damp(coreTitle.material.opacity, showTitle * boardIn, 9, dt);
   coreTitle.visible = coreTitle.material.opacity > 0.01;
   core.rotation.z = -current.tiltY * 0.4;
   if (state.selected >= 0) vizFor(state.selected).update(t, dt);
@@ -856,7 +901,7 @@ function tick() {
   }
 
   // Interconnect ring rides with the overview state.
-  const ringAlpha = coreTitle.material.opacity * boardAlpha;
+  const ringAlpha = coreTitle.material.opacity * boardAlpha * boardIn;
   ringLine.material.opacity = 0.3 * ringAlpha;
   ringLine.visible = ringAlpha > 0.02;
 

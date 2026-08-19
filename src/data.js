@@ -3,8 +3,8 @@
 // rest run counter-clockwise, matching the framework artwork.
 
 export const BRAND = {
-  eyebrow: 'Infosys Topaz™ · AI-First Value Framework',
-  event: 'Confluence US 2026',
+  // Top-left lockup: the Infosys mark, a rule, then this line.
+  brandLine: 'Unlock AI value',
   centerTitle: ['UNLOCK', 'AI VALUE'],
   intro: {
     headline: 'Unlock AI value.',
@@ -20,6 +20,7 @@ export const BRAND = {
   // One entry per line — the break is deliberate, not left to the measure.
   headline: ['Six value pools.', 'Deeply interconnected.'],
   subhead: 'Beyond experimentation, into scale.',
+  continueCta: 'Explore the framework',
 
   // Case studies below are invented stand-ins for the 403 client-masked studies
   // Infosys is tagging. Flip to false once real ones are wired in — it drives

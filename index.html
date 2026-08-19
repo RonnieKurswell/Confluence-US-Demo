@@ -14,21 +14,28 @@
     <canvas id="stage"></canvas>
 
     <!-- Brand lockup -->
-    <header class="lockup" id="lockup">
-      <div class="mark">INFOSYS</div>
-      <div class="eyebrow" id="eyebrow"></div>
-      <div class="event" id="event"></div>
+    <header class="brand" id="lockup">
+      <img class="brand-logo" id="brandLogo" alt="Infosys" hidden />
+      <span class="brand-word" id="brandWord">Infosys</span>
+      <span class="brand-rule" aria-hidden="true"></span>
+      <span class="brand-line" id="brandLine"></span>
     </header>
 
     <!-- Overview state -->
+    <div class="prompt" id="prompt">
+      <span class="prompt-ring"></span>
+      <span class="prompt-text">Touch a value pool to explore</span>
+    </div>
+
+    <!-- Stats page: shown after the warp, before the hexagon -->
     <section class="overview" id="overview">
-      <div class="prompt" id="prompt">
-        <span class="prompt-ring"></span>
-        <span class="prompt-text">Touch a value pool to explore</span>
-      </div>
       <h1 class="overview-headline" id="overviewHeadline"></h1>
       <p class="overview-sub" id="overviewSub"></p>
       <div class="facts" id="facts"></div>
+      <button class="continue" id="continue">
+        <span id="continueLabel"></span>
+        <span class="continue-arrow" aria-hidden="true">→</span>
+      </button>
     </section>
 
     <!-- Detail panel -->
@@ -135,10 +142,11 @@
       <video id="introVideo" class="intro-video" autoplay muted loop playsinline preload="auto"></video>
       <div class="intro-scrim"></div>
       <div class="intro-content">
-        <header class="lockup intro-lockup">
-          <div class="mark">INFOSYS</div>
-          <div class="eyebrow" id="introEyebrow"></div>
-          <div class="event" id="introEvent"></div>
+        <header class="brand intro-brand">
+          <img class="brand-logo" id="introBrandLogo" alt="Infosys" hidden />
+          <span class="brand-word" id="introBrandWord">Infosys</span>
+          <span class="brand-rule" aria-hidden="true"></span>
+          <span class="brand-line" id="introBrandLine"></span>
         </header>
         <h1 class="intro-headline" id="introHeadline"></h1>
         <p class="intro-sub" id="introSub"></p>
