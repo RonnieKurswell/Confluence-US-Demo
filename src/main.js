@@ -15,7 +15,7 @@ import { createConstellation } from './constellation.js';
 const IDLE_RESET_MS = 60_000; // kiosk: drop back to the overview after a minute
 const ATTRACT_AFTER_MS = 9_000; // idle on the overview: start sweeping segments
 const INTRO_RETURN_MS = 90_000; // untouched for this long: back to the intro loop
-const WARP_MS = 3_000; // the 12s wormhole clip, compressed into the jump
+const WARP_MS = 6_000; // the 12s wormhole clip, compressed into the jump
 const FOCUS_SCALE = 2.1; // how far the board zooms when a pool is opened
 
 /* ------------------------------------------------------------------ *
@@ -384,7 +384,7 @@ function buildMedia(pool) {
   dom.media.innerHTML = `
     <video playsinline muted loop preload="none"></video>
     <div class="media-placeholder">
-      <img class="media-poster" src="${import.meta.env.BASE_URL}media/cases/${pool.id}-1.jpg" alt="" loading="lazy">
+      <img class="media-poster" src="${import.meta.env.BASE_URL}media/posters/${pool.id}.jpg" alt="" decoding="async">
       <div class="media-scrim"></div>
       <div class="media-icon">&#9654;</div>
       <div class="media-copy">

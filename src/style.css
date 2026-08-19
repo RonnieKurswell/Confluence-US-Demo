@@ -549,7 +549,10 @@ body.stats-open .overview > *:nth-child(5) { transition-delay: 0.72s; }
   text-shadow: 0 0 44px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 .fact .l {
-  max-width: 20ch;
+  /* Wide enough that all three land on two lines, and height-locked so the
+     row sits on one baseline. */
+  max-width: 25ch;
+  min-height: calc(2em * 1.5);
   font-size: var(--t-caption);
   line-height: 1.5;
   letter-spacing: var(--t-caption-track);

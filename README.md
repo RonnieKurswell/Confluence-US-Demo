@@ -74,8 +74,10 @@ Pressing **Begin** plays `public/media/warp.mp4` once before the framework
 appears — a hexagonal wormhole that matches the board's geometry.
 
 The source is 12s. `WARP_MS` in [src/main.js](src/main.js) compresses it via
-`playbackRate`, currently to **3 seconds**; change that one constant to retime
-it. Keep it short — every second is a visitor standing at a booth waiting.
+`playbackRate`, currently to **6 seconds**; change that one constant to retime
+it. The pool names that fly past are timed off the same constant, so they
+rescale with it. Note the 19 Aug review asked for 3s — 6s was a later call, and
+it is the longest a visitor stands waiting anywhere in the demo.
 
 It is decorative and can never block entry. A missing file, a blocked
 `play()` or a stalled decode all fall straight through to the framework, and any
@@ -142,9 +144,9 @@ Specs, the full list and the creative brief live in
 [public/media/README.md](public/media/README.md). 30–60s per pool, muted, 16:9,
 H.264, real-world visuals.
 
-The film sits inline in the panel, showing that pool's generated scene as a
-stand-in poster frame until the real MP4 lands, and expands to near-full screen
-on tap. Case
+The film sits inline in the panel, showing that pool's poster frame from
+`public/media/posters/` until the real MP4 lands, and expands to near-full
+screen on tap. Case
 studies are one step behind their own control, opening a full-screen gallery;
 picking one shows its write-up beside the still, and closing returns to the
 gallery rather than all the way out.

@@ -56,9 +56,23 @@ did, outcome, and a headline metric.
 > real photography are in — that removes the badge. Don't clear it before the
 > content is genuinely replaced.
 
-The first image of each set (`<pool-id>-1.jpg`) doubles as the **poster frame**
-for that pool's film slot, so the panel reads the way it will once the real
-video is in place. Dropping in `<pool-id>.mp4` replaces it automatically.
+## Poster frames
+
+`posters/<pool-id>.jpg` is the still sitting in each pool's **film slot** until
+the real MP4 lands, so the panel reads the way it will with video in place.
+Dropping in `<pool-id>.mp4` replaces it automatically — no code change.
+
+These are purpose-shot-looking stand-ins, one per pool, generated with
+`openai/gpt-image-2` and graded toward that pool's accent colour: an enterprise
+command floor for AI Strategy, a data centre cold aisle for Data for AI, an
+operations floor for Process AI, a server room mid-modernisation for Agentic
+Legacy, an automotive line throwing sparks for Physical AI (Nitin's example), a
+security operations centre for AI Trust. 900x440 JPEG, ~70 KB each.
+
+They are **placeholder like everything else here** — cinematic AI stills, not
+frames from the real films. Replace each one with a genuine frame from the
+finished cut, which is also the cheapest way to make the panel look right before
+the videos themselves are cleared.
 
 Thumbnails are 1280×720 JPEG, ~80 KB each. Three per pool keeps the deck
 scrolling without inventing more than necessary; the structure takes any number.
