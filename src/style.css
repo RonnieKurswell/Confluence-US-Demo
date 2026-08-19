@@ -63,7 +63,9 @@ body {
   position: fixed;
   top: clamp(20px, 3.4vh, 44px);
   left: clamp(24px, 3vw, 56px);
-  z-index: 10;
+  /* Above the intro (100) so it stays pinned there, below the warp (120) so
+     the jump covers it. */
+  z-index: 110;
   display: flex;
   align-items: center;
   gap: clamp(14px, 1.5vw, 26px);
@@ -101,9 +103,7 @@ body {
   color: var(--ink-soft);
   opacity: 0.85;
 }
-body.intro-open .brand:not(.intro-brand) {
-  opacity: 0;
-}
+
 
 /* ---------- intro / homepage ----------
    Sits over the live scene. Begin only fades this layer away, so entering the
@@ -114,6 +114,7 @@ body.intro-open .brand:not(.intro-brand) {
   z-index: 100;
   display: flex;
   align-items: center;
+  justify-content: center;
   overflow: hidden;
   cursor: pointer;
   opacity: 0;
@@ -141,27 +142,27 @@ body.intro-open .intro {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(
-      90deg,
-      rgba(3, 6, 14, 0.62) 0%,
-      rgba(3, 6, 14, 0.45) 34%,
-      rgba(3, 6, 14, 0.18) 68%,
-      rgba(3, 6, 14, 0.1) 100%
+    radial-gradient(
+      70% 60% at 50% 52%,
+      rgba(3, 6, 14, 0.58) 0%,
+      rgba(3, 6, 14, 0.34) 55%,
+      rgba(3, 6, 14, 0.14) 100%
     ),
-    linear-gradient(0deg, rgba(3, 6, 14, 0.45) 0%, rgba(3, 6, 14, 0) 50%);
+    linear-gradient(0deg, rgba(3, 6, 14, 0.4) 0%, rgba(3, 6, 14, 0) 42%);
 }
 
 .intro-content {
   position: relative;
-  padding: 0 clamp(28px, 6vw, 130px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 clamp(28px, 6vw, 90px);
   max-width: min(100%, 1100px);
 }
 /* Inside the intro the lockup flows with the copy instead of pinning to the
    corner, so the whole block reads as one column. */
-.intro-brand {
-  position: static;
-  margin-bottom: clamp(24px, 4vh, 52px);
-}
+
 
 .intro-headline {
   font-size: var(--t-display);
@@ -175,7 +176,7 @@ body.intro-open .intro {
   font-size: var(--t-lead);
   line-height: var(--t-lead-lh);
   color: var(--ink-soft);
-  max-width: 44ch;
+  max-width: 38ch;
   text-shadow: 0 2px 24px rgba(0, 0, 0, 0.7);
 }
 
@@ -1340,10 +1341,7 @@ body.touch .hint { display: none; }
   /* Intro: copy centres and the video crops tighter on a tall screen. */
   .intro-content {
     padding: 0 clamp(24px, 8vw, 60px);
-    text-align: center;
-    margin: 0 auto;
   }
-  .intro-brand { justify-content: center; }
   .intro-sub { margin-left: auto; margin-right: auto; }
   .intro-scrim {
     background:

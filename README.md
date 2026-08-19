@@ -92,7 +92,7 @@ light version is what the dark background needs.
 
 ## Screen order
 
-1. **Intro** — looping video, Begin
+1. **Intro** — looping video, centred headline and Begin
 2. **Warp** — the wormhole, naming each pool as it flies past
 3. **Stats** — headline and the three proof points, with a Continue control
 4. **Hexagon** — the board, touch a value pool

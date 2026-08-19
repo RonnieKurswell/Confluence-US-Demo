@@ -286,7 +286,6 @@ const dom = {
 };
 
 el('brandLine').textContent = BRAND.brandLine;
-el('introBrandLine').textContent = BRAND.brandLine;
 el('continueLabel').textContent = BRAND.continueCta;
 
 // Save the real mark as public/media/brand-logo.svg (or .png) and it replaces
@@ -298,14 +297,9 @@ el('continueLabel').textContent = BRAND.continueCta;
       const res = await fetch(url, { method: 'HEAD' });
       const type = res.headers.get('content-type') || '';
       if (!res.ok || !type.startsWith('image/')) continue;
-      for (const [img, word] of [
-        ['brandLogo', 'brandWord'],
-        ['introBrandLogo', 'introBrandWord'],
-      ]) {
-        el(img).src = url;
-        el(img).hidden = false;
-        el(word).hidden = true;
-      }
+      el('brandLogo').src = url;
+      el('brandLogo').hidden = false;
+      el('brandWord').hidden = true;
       return;
     } catch {
       /* keep the text stand-in */
