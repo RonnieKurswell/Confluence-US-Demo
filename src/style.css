@@ -1,10 +1,38 @@
+/* Geist for display, Inter for body — mirrors the Infosys site's split.
+   Both are self-hosted so the booth machine needs no network. */
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-Black.woff2') format('woff2');
+  font-weight: 800 900;
+  font-display: swap;
+}
+
 :root {
   --bg: #04060e;
   --ink: #eaf3ff;
   --ink-soft: #9db4d4;
   --accent: #35d0f5;
   --panel-w: min(46vw, 880px);
-  --font: "Helvetica Neue", Helvetica, Arial, system-ui, -apple-system, sans-serif;
+  --font-display: 'Geist', 'Inter Variable', Helvetica, Arial, sans-serif;
+  --font: 'Inter Variable', 'Inter', Helvetica, Arial, system-ui, sans-serif;
 
   /* ---- type scale ----
      One definition per level of information, shared by the intro, the overview
@@ -83,6 +111,7 @@ body {
 }
 /* Stand-in until the real Infosys mark is dropped into public/media/. */
 .brand-word {
+  font-family: var(--font-display);
   font-size: clamp(20px, 1.9vw, 32px);
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -96,6 +125,7 @@ body {
   opacity: 0.35;
 }
 .brand-line {
+  font-family: var(--font-display);
   font-size: clamp(11px, 0.95vw, 16px);
   font-weight: 500;
   letter-spacing: 0.3em;
@@ -165,6 +195,7 @@ body.intro-open .intro {
 
 
 .intro-headline {
+  font-family: var(--font-display);
   font-size: var(--t-display);
   font-weight: 800;
   line-height: var(--t-display-lh);
@@ -181,6 +212,7 @@ body.intro-open .intro {
 }
 
 .begin {
+  font-family: var(--font-display);
   margin-top: clamp(26px, 4.2vh, 54px);
   display: inline-flex;
   align-items: center;
@@ -192,7 +224,7 @@ body.intro-open .intro {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   color: var(--ink);
-  font-family: inherit;
+  font-family: var(--font-display);
   font-size: var(--t-eyebrow);
   font-weight: 700;
   letter-spacing: var(--t-eyebrow-track);
@@ -255,6 +287,7 @@ body.warp-open .warp {
   pointer-events: none;
 }
 .warp-names span {
+  font-family: var(--font-display);
   grid-area: 1 / 1;
   font-size: clamp(24px, 3vw, 52px);
   font-weight: 800;
@@ -310,6 +343,7 @@ body.stats-open .overview {
 }
 
 .continue {
+  font-family: var(--font-display);
   margin-top: clamp(30px, 4.4vh, 58px);
   display: inline-flex;
   align-items: center;
@@ -319,7 +353,7 @@ body.stats-open .overview {
   border-radius: 999px;
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   color: var(--ink);
-  font-family: inherit;
+  font-family: var(--font-display);
   font-size: var(--t-eyebrow);
   font-weight: 700;
   letter-spacing: var(--t-eyebrow-track);
@@ -344,6 +378,7 @@ body.intro-open .prompt,
 body.stats-open .prompt,
 body.warp-open .prompt,
 body.panel-open .prompt {
+  font-family: var(--font-display);
   opacity: 0;
   /* the breathe animation animates opacity, so it has to stop too */
   animation: none;
@@ -368,6 +403,7 @@ body.panel-open .prompt {
 
 /* Header and subheader, same ranks as the panel's title and hook. */
 .overview-headline {
+  font-family: var(--font-display);
   margin-top: clamp(16px, 2.2vh, 28px);
   font-size: var(--t-title);
   font-weight: 800;
@@ -404,6 +440,7 @@ body.panel-open .prompt {
   background: rgba(255, 255, 255, 0.028);
 }
 .fact .v {
+  font-family: var(--font-display);
   white-space: nowrap;
   font-size: clamp(22px, 2.1vw, 36px);
   font-weight: 800;
@@ -495,6 +532,7 @@ body.panel-open .prompt {
 .panel.open .panel-inner > *:nth-child(7) { transition-delay: 0.5s; }
 
 .verb {
+  font-family: var(--font-display);
   display: flex;
   align-items: center;
   gap: 0.9em;
@@ -515,6 +553,7 @@ body.panel-open .prompt {
 /* Title and hook are height-locked so the bullet list below them starts at the
    same Y for every pool — nothing jumps as visitors cycle through. */
 .title {
+  font-family: var(--font-display);
   margin-top: clamp(14px, 1.9vh, 24px);
   font-size: var(--t-title);
   font-weight: 800;
@@ -604,6 +643,7 @@ body.panel-open .prompt {
 }
 
 .cases-cta {
+  font-family: var(--font-display);
   margin-top: clamp(14px, 1.8vh, 22px);
   display: inline-flex;
   align-items: center;
@@ -613,7 +653,7 @@ body.panel-open .prompt {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.04);
   color: var(--ink);
-  font-family: inherit;
+  font-family: var(--font-display);
   font-size: var(--t-eyebrow);
   font-weight: 700;
   letter-spacing: var(--t-eyebrow-track);
@@ -666,6 +706,7 @@ body.cases-open .cases-layer {
   right: clamp(24px, 3vw, 50px);
 }
 .cases-verb {
+  font-family: var(--font-display);
   font-size: var(--t-eyebrow);
   font-weight: 700;
   letter-spacing: var(--t-eyebrow-track);
@@ -673,6 +714,7 @@ body.cases-open .cases-layer {
   color: var(--accent);
 }
 .cases-title {
+  font-family: var(--font-display);
   margin-top: 8px;
   font-size: var(--t-title);
   font-weight: 800;
@@ -692,7 +734,7 @@ body.cases-open .cases-layer {
   padding: 0;
   background: none;
   color: inherit;
-  font-family: inherit;
+  font-family: var(--font-display);
   cursor: pointer;
   transform: translateY(14px);
   opacity: 0;
@@ -743,6 +785,7 @@ body.cases-open .case-card:nth-child(3) { transition-delay: 0.12s; }
 
 /* close + nav */
 .back {
+  font-family: var(--font-display);
   /* In the flow, above the copy — absolute placement collided with the lockup. */
   align-self: flex-start;
   margin-bottom: clamp(18px, 2.4vh, 30px);
@@ -754,7 +797,7 @@ body.cases-open .case-card:nth-child(3) { transition-delay: 0.12s; }
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.04);
   color: var(--ink);
-  font-family: inherit;
+  font-family: var(--font-display);
   font-size: var(--t-eyebrow);
   font-weight: 700;
   letter-spacing: var(--t-eyebrow-track);
@@ -852,6 +895,7 @@ body.cases-open .case-card:nth-child(3) { transition-delay: 0.12s; }
    Lives at the end of the pool panel's content, so the ask arrives after the
    visitor has actually read something — not on the framework overview. */
 .guidebook-cta {
+  font-family: var(--font-display);
   margin-top: clamp(20px, 2.8vh, 34px);
   display: inline-flex;
   align-items: center;
@@ -863,7 +907,7 @@ body.cases-open .case-card:nth-child(3) { transition-delay: 0.12s; }
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   color: var(--ink);
-  font-family: inherit;
+  font-family: var(--font-display);
   font-size: var(--t-eyebrow);
   font-weight: 700;
   letter-spacing: var(--t-eyebrow-track);
@@ -1024,6 +1068,7 @@ body.case-mode .video-caption {
   display: none;
 }
 .video-verb {
+  font-family: var(--font-display);
   font-size: var(--t-eyebrow);
   font-weight: 700;
   letter-spacing: var(--t-eyebrow-track);
@@ -1046,6 +1091,7 @@ body.case-mode .case-body {
 /* States plainly that this is stand-in content, so nothing in the room reads
    an invented study as a real client claim. */
 .case-badge {
+  font-family: var(--font-display);
   display: inline-block;
   padding: 0.5em 0.9em;
   border: 1px solid rgba(255, 190, 120, 0.4);
@@ -1058,6 +1104,7 @@ body.case-mode .case-body {
   text-transform: uppercase;
 }
 .case-client {
+  font-family: var(--font-display);
   display: block;
   margin-top: clamp(16px, 2.2vh, 26px);
   font-size: var(--t-eyebrow);
@@ -1067,6 +1114,7 @@ body.case-mode .case-body {
   color: var(--accent);
 }
 .case-title {
+  font-family: var(--font-display);
   margin-top: clamp(8px, 1.2vh, 14px);
   font-size: var(--t-title);
   font-weight: 800;
@@ -1102,6 +1150,7 @@ body.case-mode .case-body {
   gap: 0.7em;
 }
 .case-metric-value {
+  font-family: var(--font-display);
   font-size: clamp(26px, 2.3vw, 40px);
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -1179,6 +1228,7 @@ body.qr-open .qr-card {
 }
 
 .qr-title {
+  font-family: var(--font-display);
   margin-top: clamp(22px, 3vh, 36px);
   font-size: var(--t-title);
   font-weight: 800;
@@ -1301,6 +1351,8 @@ body.touch .hint { display: none; }
     position: static;
     transform: none;
   }
+  /* The stats children are explicitly ordered, so Continue needs a place. */
+  .continue { order: 5; }
   .fact {
     flex: 1 1 0;
     align-items: center;

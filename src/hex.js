@@ -81,8 +81,8 @@ function makeTextTexture(text, opts = {}) {
 
   const rows = lines || [text];
   let fontSize = size;
-  const font = (s) =>
-    `${weight} ${s}px "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif`;
+  // Display face, matching the CSS — see --font-display.
+  const font = (s) => `${weight} ${s}px Geist, Helvetica, Arial, sans-serif`;
 
   // Shrink to fit the longest row.
   ctx.font = font(fontSize);

@@ -149,6 +149,17 @@ thumbnails standing in for the 403 client-masked studies Infosys is tagging.
 They carry a visible badge saying so. See
 [public/media/README.md](public/media/README.md).
 
+## Type
+
+Geist for display — headlines, pool titles, the big numbers, and every control
+— and Inter for body copy, mirroring the split on the Infosys site. Both are
+self-hosted, so the booth machine needs no network: Geist's weights sit in
+`public/fonts/`, Inter comes in through `@fontsource-variable/inter`.
+
+The board's labels are baked into canvas textures, so `src/main.js` waits for
+Geist to load before building the hexagon — canvas text falls back silently to a
+system face if the webfont has not arrived yet, and the texture only bakes once.
+
 ## Changing the words
 
 All copy — pool titles, verbs, hooks, bullets, the headline facts — lives in

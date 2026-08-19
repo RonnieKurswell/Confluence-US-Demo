@@ -1,3 +1,5 @@
+import '@fontsource-variable/inter';
+
 import * as THREE from 'three';
 import QRCode from 'qrcode';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -104,6 +106,14 @@ scene.add(particles);
  * ------------------------------------------------------------------ */
 const world = new THREE.Group();
 scene.add(world);
+
+// Canvas text falls back silently if the face has not loaded, and the board
+// bakes its labels into textures once — so wait for Geist before building.
+await Promise.all(
+  ['600 40px Geist', '700 40px Geist', '800 40px Geist'].map((f) =>
+    document.fonts.load(f).catch(() => {})
+  )
+);
 
 const { group: hexGroup, pools, core, coreTitle, corePlate } = buildHexagon();
 world.add(hexGroup);
