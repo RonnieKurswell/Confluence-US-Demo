@@ -130,6 +130,9 @@ function labelMesh(text, theta, radiusFactor, planeW, planeH, texOpts) {
   const a = theta * DEG;
   mesh.position.set(Math.cos(a) * R * radiusFactor, Math.sin(a) * R * radiusFactor, 0);
   mesh.rotation.z = labelRotation(theta);
+  // Kept so the focus transform can counter-rotate the label against an extra
+  // half-turn of board roll — see labelFlip in main.js.
+  mesh.userData.baseRot = mesh.rotation.z;
   mesh.renderOrder = 5;
   return mesh;
 }

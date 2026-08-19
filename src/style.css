@@ -100,6 +100,35 @@ body {
   pointer-events: none;
   transition: opacity 0.5s ease;
 }
+/* The lockup doubles as the way back to the start — the one control that is on
+   screen in every state, so a visitor is never stranded. */
+.brand-home {
+  display: flex;
+  align-items: center;
+  gap: inherit;
+  padding: 6px 10px;
+  margin: -6px -10px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease;
+}
+.brand-home:hover,
+.brand-home:focus-visible {
+  background: rgba(120, 180, 255, 0.07);
+  border-color: rgba(140, 195, 255, 0.22);
+  outline: none;
+}
+.brand-home:active {
+  background: rgba(120, 180, 255, 0.12);
+}
 .brand-logo {
   height: clamp(20px, 1.9vw, 32px);
   width: auto;
@@ -758,15 +787,20 @@ body.panel-open .prompt {
   letter-spacing: 0.01em;
   color: var(--ink-soft);
 }
+/* A small pointy-top hexagon in the pool's accent, cut to the same proportion as
+   the board's own sectors, so the list reads as part of the framework rather
+   than a generic bulleted list. One solid shape rather than a ring and a core —
+   at 8px a ring reads as a radio button, a solid hexagon reads as a hexagon. */
 .bullets li::before {
   content: "";
   position: absolute;
-  left: 0;
-  top: 0.72em;
-  width: 10px;
-  height: 1px;
+  left: 1px;
+  top: 0.44em;
+  width: 8px;
+  height: 9.2px;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
   background: var(--accent);
-  opacity: 0.8;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--accent) 55%, transparent));
 }
 
 /* ---------- panel media + case studies ----------
@@ -1567,5 +1601,162 @@ body.touch .hint { display: none; }
   * {
     animation-duration: 0.01ms !important;
     transition-duration: 0.1ms !important;
+  }
+}
+
+/* ---------- auto play ----------
+   Top right, opposite the lockup. Walks the whole demo unattended so the booth
+   plays itself when nobody is standing at it, and so a presenter can let it run
+   while they talk. Any touch anywhere drops it back to manual.
+
+   Icon only, no caption: a play glyph at rest, a stop square while it runs. It
+   is a presenter control rather than something a visitor needs explained, so it
+   stays quiet in the corner. */
+.autoplay {
+  position: fixed;
+  top: clamp(20px, 3.4vh, 44px);
+  right: clamp(24px, 3vw, 56px);
+  /* Alongside the lockup: over the panel and the case / QR layers, under the
+     warp so the jump covers the whole screen. */
+  z-index: 110;
+  display: grid;
+  place-items: center;
+  width: clamp(38px, 3.2vw, 46px);
+  height: clamp(38px, 3.2vw, 46px);
+  padding: 0;
+  border: 1px solid rgba(140, 195, 255, 0.18);
+  border-radius: 50%;
+  background: rgba(8, 18, 38, 0.42);
+  backdrop-filter: blur(10px);
+  color: var(--ink-soft);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease;
+}
+.autoplay:hover,
+.autoplay:focus-visible {
+  color: var(--ink);
+  border-color: rgba(140, 195, 255, 0.42);
+  outline: none;
+}
+.autoplay[aria-pressed='true'] {
+  border-color: rgba(120, 205, 255, 0.5);
+  background: rgba(14, 40, 78, 0.55);
+}
+.autoplay-icon {
+  position: relative;
+  width: 11px;
+  height: 12px;
+  color: var(--accent, #7cc9ff);
+}
+/* Play triangle at rest, a stop square while it is running. */
+.autoplay-icon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  transition: clip-path 0.2s ease;
+}
+.autoplay[aria-pressed='true'] .autoplay-icon::before {
+  clip-path: polygon(0 4%, 100% 4%, 100% 96%, 0 96%);
+}
+.autoplay[aria-pressed='true'] .autoplay-icon {
+  animation: tourPulse 1.9s ease-in-out infinite;
+}
+@keyframes tourPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+/* The warp owns the screen; nothing else should show through it. */
+body.warp-open .autoplay {
+  opacity: 0;
+  pointer-events: none;
+  animation: none;
+}
+/* Kept for screen readers and for the state the button is reporting. */
+.autoplay-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- per-pool background plates ----------
+   One dark atmospheric plate per value pool, sitting behind the WebGL canvas
+   and cross-fading as visitors move between pools, so each pool has its own
+   sense of place instead of all six sharing one black void.
+
+   The renderer clears transparent for this (see main.js). The scrim over the
+   top is doing real work: the plates are deliberately dark, but the copy column
+   still needs a guaranteed floor of contrast whatever the generated image does,
+   so it stays heaviest on the left where the words are. Missing files simply
+   show nothing, the same resolve-if-present behaviour as the videos. */
+.pool-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: var(--bg);
+  overflow: hidden;
+}
+#stage {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+.pool-bg-plate {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transform: scale(1.04);
+  transition:
+    opacity 1.1s ease,
+    transform 8s ease-out;
+  will-change: opacity;
+}
+.pool-bg-plate.on {
+  opacity: 0.95;
+  transform: scale(1);
+}
+/* Contrast floor for the copy column, heaviest on the left. */
+.pool-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      100deg,
+      rgba(4, 6, 14, 0.93) 0%,
+      rgba(4, 6, 14, 0.78) 30%,
+      rgba(4, 6, 14, 0.24) 58%,
+      rgba(4, 6, 14, 0.34) 100%
+    ),
+    radial-gradient(130% 95% at 66% 52%, rgba(4, 6, 14, 0) 0%, rgba(4, 6, 14, 0.34) 84%);
+}
+/* Portrait puts the copy in a bottom sheet, so the scrim rolls with it. */
+@media (max-aspect-ratio: 1/1) {
+  .pool-bg::after {
+    background:
+      linear-gradient(
+        to top,
+        rgba(4, 6, 14, 0.95) 0%,
+        rgba(4, 6, 14, 0.8) 38%,
+        rgba(4, 6, 14, 0.4) 68%,
+        rgba(4, 6, 14, 0.6) 100%
+      ),
+      radial-gradient(120% 60% at 50% 34%, rgba(4, 6, 14, 0) 0%, rgba(4, 6, 14, 0.5) 84%);
   }
 }

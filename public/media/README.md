@@ -76,3 +76,12 @@ the videos themselves are cleared.
 
 Thumbnails are 1280×720 JPEG, ~80 KB each. Three per pool keeps the deck
 scrolling without inventing more than necessary; the structure takes any number.
+
+## Background plates
+
+`backgrounds/<pool-id>.jpg` is the atmospheric plate behind each pool, described
+in the root [README](../../README.md). Abstract, very dark, one accent hue each,
+left half kept empty for the copy column. 1600x900 JPEG, ~130 KB each.
+
+Placeholder like the rest: generated, not shot. They are the least urgent thing
+here to replace — they are meant to be barely noticed.

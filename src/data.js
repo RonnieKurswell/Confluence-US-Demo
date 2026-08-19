@@ -7,7 +7,7 @@ export const BRAND = {
   brandLine: 'Unlock AI value',
   centerTitle: ['UNLOCK', 'AI VALUE'],
   intro: {
-    headline: 'Unlock AI value.',
+    headline: 'Unlock AI value',
     sub: 'Six value pools, one path to transformation.',
     cta: 'Begin',
   },

@@ -33,6 +33,8 @@ stick, a local folder, or any static host — no network needed.
 | Input | What it does |
 | --- | --- |
 | **Begin** (or tap anywhere on the intro, or Enter/Space) | Plays the warp, lands on the stats page |
+| **The Infosys lockup**, top left | Starts the whole experience over, from any screen |
+| **Auto play**, top right | Runs the demo unattended, on a loop |
 | **Explore the framework** (or Enter/Space) | Leaves the stats page for the hexagon |
 | Tap / click a segment | Opens that value pool |
 | Tapping outside the pool | Returns to the hexagon |
@@ -88,6 +90,40 @@ tap or key press skips it.
 Top left, on every screen: the Infosys mark, a hairline rule, then the demo's
 name. The line itself is `BRAND.brandLine` in [src/data.js](src/data.js).
 
+It is also a button — pressing it starts the experience over from the intro, from
+wherever the visitor happens to be. It sits above the panel and the case / QR
+layers, so it is the one control that is always reachable and nobody can get
+stranded somewhere with no way back.
+
+## Auto play
+
+Top right, opposite the lockup. It walks the whole thing on its own — intro,
+warp, stats, board, then each of the six pools in turn — and loops until it is
+switched off. Two jobs: the booth plays itself when nobody is standing at it, and
+a presenter can let it run while they talk over the top.
+
+Timings are one object, `TOUR_HOLD` in [src/main.js](src/main.js):
+
+| Beat | Hold |
+| --- | --- |
+| Warp | `WARP_MS` + 0.7s |
+| Stats | 6s |
+| Board, before the first pool | 3.2s |
+| Each value pool | 7s |
+| Intro, before going round again | 2.4s |
+
+That is roughly a 65-second loop. `__demo.TOUR_HOLD` is live, so the beats can be
+retuned at the booth without a rebuild. It drives the same functions a visitor's touch
+does rather than synthesising clicks, so there is one code path for both.
+
+**Any touch or key press anywhere drops it back to manual**, so the tour never
+fights whoever walks up to the booth. Its own button is the exception. It also
+counts each beat as input, so the idle timers below never fire underneath it and
+pull it back to the intro mid-loop.
+
+It runs the main spine only — it does not open the case galleries, the expanded
+film or the QR code, which would push the loop past two minutes.
+
 The mark is currently a **text stand-in**. Save the real logo as
 `public/media/brand-logo.svg` (or `.png`) and it swaps itself in — same
 resolve-if-present pattern as the videos, no code change needed. A white or
@@ -125,6 +161,34 @@ there is no image to regenerate.
 The CTA deliberately does **not** appear on the framework overview; it shows up
 only once a visitor has opened a value pool and read something.
 
+## Per-pool backgrounds
+
+Each value pool has its own background plate in `public/media/backgrounds/`,
+sitting behind the WebGL canvas and cross-fading as visitors move between pools,
+so each pool has a sense of place instead of all six sharing one black void. The
+framework overview and the intro carry none — the board stays neutral, and the
+place arrives with the pool.
+
+For this the renderer clears **transparent** (`alpha: true`, `scene.background =
+null`) and the page itself carries the base colour. The scrim over the plates in
+`.pool-bg::after` is doing real work: it guarantees a contrast floor for the copy
+whatever the image behind it does, so it stays heaviest on the left in landscape
+and rolls to the bottom in portrait where the copy becomes a sheet. If a plate
+ever fights the words, lift that scrim rather than dimming the plate.
+
+Missing files simply show nothing, the same resolve-if-present behaviour as the
+videos, so the demo never breaks on a bad filename.
+
+**These are placeholder**, generated with `openai/gpt-image-2` — abstract, very
+dark, one accent hue each, with the left half deliberately empty. 1600x900 JPEG,
+800 KB for all six.
+
+They are **stills, not video**. Six looping background clips would add tens of
+megabytes on top of the intro, the warp and the six pool films, on a bundle that
+has to work off a USB stick and over conference wifi. If a moving background is
+wanted later, the cheaper route is animating these plates in CSS — the slow
+`transform: scale()` already on `.pool-bg-plate` is that hook.
+
 ## Dropping in videos
 
 Put an MP4 in `public/media/` named after the pool and it appears automatically
@@ -157,6 +221,10 @@ They carry a visible badge saying so. See
 [public/media/README.md](public/media/README.md).
 
 ## Type
+
+Bullets are marked with a small pointy-top hexagon in the pool's accent, cut to
+the same proportion as the board's own sectors, so the list reads as part of the
+framework rather than a generic bulleted list.
 
 Geist for display — headlines, pool titles and every control — and Inter for
 body copy, mirroring the split on the Infosys site. Titles are **Geist Medium
@@ -193,7 +261,16 @@ Each pool also names its centre visual via `viz`. The six procedural scenes
 ## Opening a value pool
 
 Selecting a pool pushes that sector to the middle of the free space, rolls it
-square and zooms in, while the other five fade out. Detail copy appears on the
+square and zooms in, while the other five fade out.
+
+Squaring a sector up leaves a half-turn ambiguity, and taking the shortest turn
+lands three of the six mirrored — the verb band above the title for some pools
+and below it for others, which reads as the object jumping up and down as
+visitors swipe. So the roll picks the half-turn that always points the sector
+outward-down, putting the verb above the title for all six, matching the
+eyebrow-then-title order of the copy column. The labels carry the opposite of
+whatever that adds beyond squaring up (`labelFlip`), so the text stays upright
+while the geometry turns underneath it. Detail copy appears on the
 left. There is no Back button — an instruction under the object says to swipe
 between pools or tap outside to return, which keeps the chrome off the screen. `FOCUS_SCALE` in [src/main.js](src/main.js) sets
 how far it zooms; the damping is tuned so the move settles in about half a
@@ -206,4 +283,5 @@ second, which is the responsiveness the brief asks for.
 - Chrome kiosk mode: `chrome --kiosk --app=file:///path/to/dist/index.html`
   (serve `dist/` over `http://` instead if you want video autoplay to be
   reliable — `python3 -m http.server` from inside `dist/` is enough).
-- `window.__demo` is exposed for quick on-site tuning (`__demo.select(0)`).
+- `window.__demo` is exposed for quick on-site tuning (`__demo.select(0)`,
+  `__demo.startTour()`).

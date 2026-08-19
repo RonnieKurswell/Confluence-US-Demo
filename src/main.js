@@ -22,14 +22,22 @@ const FOCUS_SCALE = 2.1; // how far the board zooms when a pool is opened
  * Renderer, scene, camera
  * ------------------------------------------------------------------ */
 const canvas = document.getElementById('stage');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+// alpha, so the per-pool background plates behind the canvas show through. The
+// page itself carries the base colour, and the fog still fades to it.
+const renderer = new THREE.WebGLRenderer({
+  canvas,
+  antialias: true,
+  alpha: true,
+  powerPreference: 'high-performance',
+});
+renderer.setClearAlpha(0);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(PALETTE.bg);
+scene.background = null;
 scene.fog = new THREE.Fog(PALETTE.bg, 26, 52);
 
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
@@ -167,6 +175,17 @@ const ringLine = new THREE.LineLoop(
 );
 hexGroup.add(ringLine);
 
+/* Per-pool background plates. Built up front so all six are decoded before
+ * anyone swipes; a missing file just shows nothing. */
+const bgPlates = POOLS.map((pool) => {
+  const plate = document.createElement('div');
+  plate.className = 'pool-bg-plate';
+  plate.style.backgroundImage = `url("${import.meta.env.BASE_URL}media/backgrounds/${pool.id}.jpg")`;
+  document.getElementById('poolBg').append(plate);
+  return plate;
+});
+const setPoolBg = (i) => bgPlates.forEach((p, k) => p.classList.toggle('on', k === i));
+
 const vizCache = new Map();
 function vizFor(i) {
   if (!vizCache.has(i)) {
@@ -205,8 +224,8 @@ const state = {
   attractTimer: 0,
 };
 
-const target = { x: 0, y: 0, scale: 1, tiltX: 0, tiltY: 0, spin: 0, roll: 0 };
-const current = { x: 0, y: 0, scale: 1, tiltX: 0, tiltY: 0, spin: 0, roll: 0 };
+const target = { x: 0, y: 0, scale: 1, tiltX: 0, tiltY: 0, spin: 0, roll: 0, labelFlip: 0 };
+const current = { x: 0, y: 0, scale: 1, tiltX: 0, tiltY: 0, spin: 0, roll: 0, labelFlip: 0 };
 
 function layout() {
   const w = innerWidth;
@@ -235,6 +254,13 @@ function layout() {
   applyTargets();
 }
 
+// Same angle, nearest full turn to `ref` — keeps damped rotations on the short
+// path instead of unwinding through a whole revolution.
+function nearestTurn(angle, ref) {
+  const TAU = Math.PI * 2;
+  return angle + Math.round((ref - angle) / TAU) * TAU;
+}
+
 function applyTargets() {
   const half = Math.tan((camera.fov * Math.PI) / 360);
   const worldW = 2 * camera.position.z * half * camera.aspect;
@@ -252,7 +278,8 @@ function applyTargets() {
     target.scale = 1;
     target.tiltX = 0;
     target.tiltY = 0;
-    target.roll = 0;
+    target.roll = nearestTurn(0, current.roll);
+    target.labelFlip = 0;
     return;
   }
 
@@ -264,10 +291,27 @@ function applyTargets() {
 
   // With the other five hidden there is nothing left to disorient, so the board
   // rolls until the open sector sits square — its label reads straight across.
+  // Squaring it up alone leaves a half-turn ambiguity, and taking the shortest
+  // one lands three of the six mirrored: the verb band above the title for some
+  // pools and below it for others, which reads as the object jumping up and
+  // down as visitors swipe. So pick the half-turn that always points the sector
+  // outward-down, putting the verb above the title for all six — the same
+  // eyebrow-then-title order the copy column uses.
   let deg = theta + 90;
   while (deg > 90) deg -= 180;
   while (deg <= -90) deg += 180;
-  target.roll = (-deg * Math.PI) / 180;
+  let rollDeg = -deg;
+  let outward = (theta + rollDeg) % 360;
+  if (outward > 180) outward -= 360;
+  if (outward <= -180) outward += 360;
+  if (outward > 0) rollDeg += 180;
+
+  // Unwrap to whichever full turn sits closest to where the board already is,
+  // so the extra half-turn never becomes a 300-degree spin between two pools.
+  target.roll = nearestTurn((rollDeg * Math.PI) / 180, current.roll);
+  // The labels carry the opposite of whatever the roll adds beyond squaring up,
+  // so the text stays upright while the geometry turns underneath it.
+  target.labelFlip = -pools[state.selected].titleLabel.userData.baseRot - target.roll;
 
   // Position has to solve against the roll, or the sector lands off-centre.
   const cos = Math.cos(target.roll);
@@ -308,6 +352,7 @@ const dom = {
   media: el('panelMedia'),
   dots: el('dots'),
   lockup: el('lockup'),
+  autoplay: el('autoplay'),
   prompt: el('prompt'),
   poolHint: el('poolHint'),
 };
@@ -685,6 +730,7 @@ el('qrLayer').addEventListener('click', (e) => {
  * Selection
  * ------------------------------------------------------------------ */
 function select(i) {
+  setPoolBg(i);
   if (i === state.selected) return;
   state.selected = i;
   state.attract = -1;
@@ -719,6 +765,7 @@ function select(i) {
 }
 
 function deselect() {
+  setPoolBg(-1);
   if (state.selected < 0) return;
   hideVideo();
   hideCases();
@@ -793,8 +840,99 @@ canvas.addEventListener('pointermove', (e) => {
 });
 canvas.addEventListener('pointerleave', () => (state.hovered = -1));
 
+/* ------------------------------------------------------------------ *
+ * Auto play
+ * ------------------------------------------------------------------ *
+ * Walks the whole experience on its own — intro, warp, stats, board, then each
+ * value pool in turn — and loops. Two jobs: the booth plays itself when nobody
+ * is standing at it, and a presenter can let it run while they talk over it.
+ *
+ * It drives the same functions a visitor's touch does rather than synthesising
+ * clicks, so there is one code path for both and no way for the two to diverge.
+ */
+const TOUR_HOLD = {
+  warp: WARP_MS + 700, // the jump, plus a beat to land
+  stats: 6_000, // long enough to read the headline and three proof points
+  board: 3_200, // the hexagon on its own before the first pool opens
+  pool: 7_000, // one value pool: title, three points, film
+  reset: 2_400, // back on the intro before it goes round again
+};
+
+const tour = { on: false, token: 0 };
+
+function paintTour() {
+  dom.autoplay.setAttribute('aria-pressed', String(tour.on));
+  el('autoplayLabel').textContent = tour.on ? 'Playing' : 'Auto play';
+}
+
+function stopTour() {
+  if (!tour.on) return;
+  tour.on = false;
+  tour.token++; // orphans any beat still in flight
+  paintTour();
+}
+
+async function startTour() {
+  if (tour.on) return;
+  tour.on = true;
+  const token = ++tour.token;
+  paintTour();
+
+  const alive = () => tour.on && token === tour.token;
+  // Every beat counts as input too, so the kiosk idle timers never fire
+  // underneath the tour and yank it back to the intro mid-loop.
+  const beat = (ms) =>
+    new Promise((r) => setTimeout(r, ms)).then(() => {
+      state.lastInput = performance.now();
+      return alive();
+    });
+
+  while (alive()) {
+    hideQr();
+    hideVideo();
+    hideCases();
+    if (!introOpen()) {
+      returnToIntro();
+      if (!(await beat(TOUR_HOLD.reset))) return;
+    }
+
+    enterExperience();
+    // Only wait out the warp if it actually started — a missing or blocked clip
+    // drops straight onto the stats page and should not sit there twice as long.
+    if (document.body.classList.contains('warp-open')) {
+      if (!(await beat(TOUR_HOLD.warp))) return;
+      endWarp();
+    }
+    if (!statsOpen()) document.body.classList.add('stats-open');
+    if (!(await beat(TOUR_HOLD.stats))) return;
+
+    leaveStats();
+    if (!(await beat(TOUR_HOLD.board))) return;
+
+    for (let i = 0; i < POOLS.length; i++) {
+      select(i);
+      if (!(await beat(TOUR_HOLD.pool))) return;
+    }
+
+    deselect();
+    if (!(await beat(TOUR_HOLD.board))) return;
+    returnToIntro();
+    if (!(await beat(TOUR_HOLD.reset))) return;
+  }
+}
+
+dom.autoplay.addEventListener('click', () => (tour.on ? stopTour() : startTour()));
+
+// The lockup is the way back to the start from anywhere.
+el('brandHome').addEventListener('click', () => {
+  stopTour();
+  returnToIntro();
+});
+
 addEventListener('keydown', (e) => {
   state.lastInput = performance.now();
+  // Anyone reaching for the keyboard is taking over; the tour steps aside.
+  if (tour.on && !e.target?.closest?.('.autoplay')) stopTour();
   if (document.body.classList.contains('warp-open')) {
     endWarp();
     return;
@@ -825,7 +963,16 @@ addEventListener('keydown', (e) => {
   const n = Number(e.key);
   if (n >= 1 && n <= POOLS.length) select(n - 1);
 });
-addEventListener('pointerdown', () => (state.lastInput = performance.now()), true);
+addEventListener(
+  'pointerdown',
+  (e) => {
+    state.lastInput = performance.now();
+    // A visitor touching anything drops auto play, so the tour never fights
+    // whoever is standing at the booth. Its own button is the exception.
+    if (tour.on && !e.target?.closest?.('.autoplay')) stopTour();
+  },
+  true
+);
 
 /* ------------------------------------------------------------------ *
  * Animation loop
@@ -870,6 +1017,7 @@ function tick() {
   current.tiltY = damp(current.tiltY, target.tiltY, 3.4, dt);
   current.spin = damp(current.spin, target.spin, 2.0, dt);
   current.roll = damp(current.roll, target.roll, 4.2, dt);
+  current.labelFlip = damp(current.labelFlip, target.labelFlip, 4.2, dt);
 
   world.position.set(current.x, current.y, 0);
   world.scale.setScalar(current.scale);
@@ -889,7 +1037,10 @@ function tick() {
 
     p.holder.visible = p.fade > 0.01;
     p.materials.forEach((m) => (m.opacity = p.fade * boardIn));
-    p.labels.forEach((l) => (l.material.opacity = p.fade * boardIn * (0.18 + p.dim * 0.82)));
+    p.labels.forEach((l) => {
+      l.material.opacity = p.fade * boardIn * (0.18 + p.dim * 0.82);
+      l.rotation.z = l.userData.baseRot + (state.selected === i ? current.labelFlip : 0);
+    });
 
     p.holder.position.z = p.lift * 0.85 + (state.selected < 0 ? Math.sin(t * 0.8 + i) * 0.045 : 0);
     p.rimMesh.material.opacity = p.glow * 0.9 * p.fade * boardIn;
@@ -1015,6 +1166,10 @@ window.__demo = {
   core,
   coreTitle,
   vizCache,
+  startTour,
+  stopTour,
+  tour,
+  TOUR_HOLD,
   select,
   deselect,
   current,
