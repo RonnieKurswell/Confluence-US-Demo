@@ -8,7 +8,7 @@ export const BRAND = {
   centerTitle: ['UNLOCK', 'AI VALUE'],
   intro: {
     headline: 'Unlock AI value.',
-    sub: 'Six interconnected value pools. One disciplined path from experimentation to enterprise scale.',
+    sub: 'Six value pools, one path to transformation.',
     cta: 'Begin',
   },
   // Fact labels are capped at two lines in the layout — keep them short.

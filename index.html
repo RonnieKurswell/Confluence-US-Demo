@@ -33,15 +33,21 @@
 
     <!-- Detail panel -->
     <aside class="panel" id="panel" aria-hidden="true">
-      <button class="close" id="close" aria-label="Back to the framework">
-        <span></span><span></span>
+      <button class="back" id="close" aria-label="Back to the framework">
+        <span class="back-arrow" aria-hidden="true">←</span>
+        <span>Back</span>
       </button>
       <div class="panel-inner">
         <div class="verb" id="panelVerb"></div>
         <h1 class="title" id="panelTitle"></h1>
         <p class="hook" id="panelHook"></p>
         <ul class="bullets" id="panelBullets"></ul>
-        <div class="deck" id="panelDeck"></div>
+        <div class="panel-media" id="panelMedia"></div>
+        <button class="cases-cta" id="casesCta">
+          <span class="cases-count" id="casesCount"></span>
+          <span id="casesLabel"></span>
+          <span class="cases-arrow" aria-hidden="true">→</span>
+        </button>
         <p class="proof" id="panelProof"></p>
         <button class="guidebook-cta" id="guidebookCta">
           <span class="cta-icon" aria-hidden="true">⌖</span>
@@ -58,6 +64,7 @@
     <!-- Warp transition, played once when Begin is pressed -->
     <div class="warp" id="warp" aria-hidden="true">
       <video id="warpVideo" muted playsinline preload="auto"></video>
+      <div class="warp-names" id="warpNames"></div>
     </div>
 
     <!-- Expanded video / case study -->
@@ -94,6 +101,18 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Case study gallery -->
+    <div class="cases-layer" id="casesLayer" role="dialog" aria-modal="true" aria-hidden="true">
+      <button class="close cases-close" id="casesClose" aria-label="Close">
+        <span></span><span></span>
+      </button>
+      <div class="cases-head">
+        <span class="cases-verb" id="casesVerb"></span>
+        <h2 class="cases-title" id="casesTitle"></h2>
+      </div>
+      <div class="cases-grid" id="casesGrid"></div>
     </div>
 
     <!-- QR takeaway -->

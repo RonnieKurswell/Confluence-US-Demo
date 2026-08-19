@@ -12,7 +12,8 @@ import { createCoreViz } from './coreviz.js';
 const IDLE_RESET_MS = 60_000; // kiosk: drop back to the overview after a minute
 const ATTRACT_AFTER_MS = 9_000; // idle on the overview: start sweeping segments
 const INTRO_RETURN_MS = 90_000; // untouched for this long: back to the intro loop
-const WARP_MS = 2_000; // the 12s wormhole clip, compressed into the jump
+const WARP_MS = 3_000; // the 12s wormhole clip, compressed into the jump
+const FOCUS_SCALE = 2.1; // how far the board zooms when a pool is opened
 
 /* ------------------------------------------------------------------ *
  * Renderer, scene, camera
@@ -104,8 +105,18 @@ scene.add(particles);
 const world = new THREE.Group();
 scene.add(world);
 
-const { group: hexGroup, pools, core, coreTitle } = buildHexagon();
+const { group: hexGroup, pools, core, coreTitle, corePlate } = buildHexagon();
 world.add(hexGroup);
+
+// Opening a pool fades the rest of the board out, so every material that takes
+// part needs to be able to carry an alpha.
+const corePlateMat = corePlate.material;
+corePlateMat.transparent = true;
+pools.forEach((p) => {
+  p.materials.forEach((m) => (m.transparent = true));
+  p.fade = 1;
+  p.targetFade = 1;
+});
 
 // A hex ring tracing the inner boundary — the "deeply interconnected" idea,
 // shown rather than written. Fades away once a pool is open. Six-sided, to stay
@@ -133,9 +144,13 @@ const vizCache = new Map();
 function vizFor(i) {
   if (!vizCache.has(i)) {
     const v = createCoreViz(POOLS[i].viz, POOLS[i].accent);
-    v.object.scale.setScalar(1.25);
-    v.object.position.z = 0.35;
-    core.add(v.object);
+    v.object.scale.setScalar(0.95);
+    // Sits behind its own sector, so it stays with the pool when the board
+    // pushes that sector to the middle of the screen.
+    const th = (i * 60 * Math.PI) / 180;
+    const r = R * ((1.0 + 0.795) / 2) * Math.cos(Math.PI / 6);
+    v.object.position.set(Math.cos(th) * r, Math.sin(th) * r, -0.9);
+    hexGroup.add(v.object);
     vizCache.set(i, v);
   }
   return vizCache.get(i);
@@ -163,8 +178,8 @@ const state = {
   attractTimer: 0,
 };
 
-const target = { x: 0, y: 0, scale: 1, tiltX: 0, tiltY: 0, spin: 0 };
-const current = { x: 0, y: 0, scale: 1, tiltX: 0, tiltY: 0, spin: 0 };
+const target = { x: 0, y: 0, scale: 1, tiltX: 0, tiltY: 0, spin: 0, roll: 0 };
+const current = { x: 0, y: 0, scale: 1, tiltX: 0, tiltY: 0, spin: 0, roll: 0 };
 
 function layout() {
   const w = innerWidth;
@@ -198,28 +213,53 @@ function applyTargets() {
   const worldW = 2 * camera.position.z * half * camera.aspect;
   const worldH = 2 * camera.position.z * half;
 
-  if (state.isPortrait) {
-    target.x = 0;
-    target.y = state.selected < 0 ? worldH * 0.09 : worldH * 0.235;
-    target.scale = state.selected < 0 ? 1 : 0.5;
-  } else {
-    // The overview and the open state share one framing, so selecting a pool
-    // swaps the copy beside a board that stays put.
-    // Slightly less than half the panel width keeps it optically centred in
-    // the space it has left rather than pinned to the edge.
-    target.x = -worldW * state.panelFraction * 0.38;
-    target.y = 0;
-    target.scale = 1 - state.panelFraction * 0.38;
-  }
+  // Centre of the space the copy column leaves free. The column is on the left,
+  // so the board lives to the right of it.
+  const freeCentreX = (worldW * state.panelFraction) / 2;
 
   if (state.selected < 0) {
+    target.x = state.isPortrait ? 0 : worldW * state.panelFraction * 0.38;
+    target.y = state.isPortrait ? worldH * 0.09 : 0;
+    target.scale = state.isPortrait ? 1 : 1 - state.panelFraction * 0.38;
     target.tiltX = 0;
     target.tiltY = 0;
+    target.roll = 0;
     return;
   }
-  const th = (pools[state.selected].theta * Math.PI) / 180;
-  target.tiltX = -Math.sin(th) * 0.17;
-  target.tiltY = Math.cos(th) * 0.17;
+
+  // Opening a pool pushes that sector to the middle and zooms into it. Solving
+  // for position rather than animating a child keeps one transform authoritative.
+  const theta = pools[state.selected].theta;
+  const th = (theta * Math.PI) / 180;
+  const rSector = R * ((1.0 + 0.795) / 2) * Math.cos(Math.PI / 6);
+
+  // With the other five hidden there is nothing left to disorient, so the board
+  // rolls until the open sector sits square — its label reads straight across.
+  let deg = theta + 90;
+  while (deg > 90) deg -= 180;
+  while (deg <= -90) deg += 180;
+  target.roll = (-deg * Math.PI) / 180;
+
+  // Position has to solve against the roll, or the sector lands off-centre.
+  const cos = Math.cos(target.roll);
+  const sin = Math.sin(target.roll);
+  const px = Math.cos(th) * rSector;
+  const py = Math.sin(th) * rSector;
+  const rx = px * cos - py * sin;
+  const ry = px * sin + py * cos;
+
+  if (state.isPortrait) {
+    target.scale = FOCUS_SCALE * 0.62;
+    target.x = -target.scale * rx;
+    target.y = worldH * 0.2 - target.scale * ry;
+  } else {
+    target.scale = FOCUS_SCALE;
+    target.x = freeCentreX - target.scale * rx;
+    target.y = -target.scale * ry;
+  }
+  // Straight on while focused — a tilt fights the zoom and hurts legibility.
+  target.tiltX = 0;
+  target.tiltY = 0;
 }
 
 addEventListener('resize', layout);
@@ -237,7 +277,7 @@ const dom = {
   hook: el('panelHook'),
   bullets: el('panelBullets'),
   proof: el('panelProof'),
-  deck: el('panelDeck'),
+  media: el('panelMedia'),
   dots: el('dots'),
   lockup: el('lockup'),
   prompt: el('prompt'),
@@ -283,23 +323,29 @@ async function resolveVideo(id) {
   return found;
 }
 
-// Builds the pool's strip of thumbnails: the film first, then its case
-// studies. Tiles are static stills — the heavy playback lives in the lightbox.
-function buildDeck(pool) {
-  const base = import.meta.env.BASE_URL;
-  dom.deck.innerHTML = [
-    `<button class="tile tile-video" data-kind="video">
-       <span class="tile-play"><span>&#9654;</span></span>
-       <span class="tile-label">Value pool film</span>
-     </button>`,
-    ...pool.cases.map(
-      (c, i) => `<button class="tile" data-kind="case" data-index="${i}">
-         <img src="${base}media/cases/${c.id}.jpg" alt="" loading="lazy">
-         <span class="tile-label">${c.client}</span>
-       </button>`
-    ),
-  ].join('');
-  dom.deck.scrollLeft = 0;
+// The film sits inline in the panel. Case studies live behind their own control
+// so the two are not competing for the same strip.
+function buildMedia(pool) {
+  dom.media.classList.remove('has-video');
+  dom.media.innerHTML = `
+    <video playsinline muted loop preload="none"></video>
+    <div class="media-placeholder">
+      <div class="media-icon">&#9654;</div>
+      <div class="media-copy">
+        <strong>Value pool film</strong>
+        <span>public/media/${pool.id}.mp4</span>
+      </div>
+    </div>`;
+  el('casesCount').textContent = pool.cases.length;
+  el('casesLabel').textContent = 'Case studies';
+
+  resolveVideo(pool.id).then((url) => {
+    if (!url || POOLS[state.selected]?.id !== pool.id) return;
+    const v = dom.media.querySelector('video');
+    v.src = url;
+    dom.media.classList.add('has-video');
+    v.play().catch(() => {});
+  });
 }
 
 /* ------------------------------------------------------------------ *
@@ -342,6 +388,7 @@ function returnToIntro() {
   endWarp();
   hideQr();
   hideVideo();
+  hideCases();
   deselect();
   document.body.classList.add('intro-open');
   introVideo.currentTime = 0;
@@ -386,6 +433,14 @@ function playWarp() {
   warpTimer = setTimeout(endWarp, WARP_MS + 250);
   return true;
 }
+
+// The six pools are named as you fly through, so the jump carries the story
+// rather than just being motion. Timing is driven off WARP_MS.
+el('warpNames').innerHTML = POOLS.map(
+  (p, i) =>
+    `<span style="animation-delay:${((i * (WARP_MS * 0.82)) / POOLS.length / 1000).toFixed(2)}s">${p.title}</span>`
+).join('');
+document.documentElement.style.setProperty('--warp-name-ms', `${Math.round(WARP_MS / POOLS.length + 260)}ms`);
 
 warpVideo.addEventListener('ended', endWarp);
 el('warp').addEventListener('click', endWarp);
@@ -465,54 +520,47 @@ function hideVideo() {
   state.lastInput = performance.now();
 }
 
-dom.deck.addEventListener('click', (e) => {
-  if (deckDragged) return; // that click was the end of a drag
-  const tile = e.target.closest('.tile');
-  if (!tile) return;
-  if (tile.dataset.kind === 'video') showVideo();
-  else showCase(Number(tile.dataset.index));
-});
+dom.media.addEventListener('click', showVideo);
 
-/* Deck scrolling: touch swipe works natively, so this adds the two a mouse
- * needs — a vertical wheel drives the strip sideways, and it can be dragged. */
-let deckDragged = false;
-let deckDrag = null;
+/* Case study gallery — the pool's studies, one step away from the panel. */
+const casesOpen = () => document.body.classList.contains('cases-open');
 
-dom.deck.addEventListener(
-  'wheel',
-  (e) => {
-    // Trackpads send horizontal deltas already; only remap a vertical wheel.
-    if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
-    dom.deck.scrollLeft += e.deltaY;
-    e.preventDefault();
-    state.lastInput = performance.now();
-  },
-  { passive: false }
-);
-
-dom.deck.addEventListener('pointerdown', (e) => {
-  if (e.pointerType === 'touch') return; // native scrolling is better on touch
-  deckDrag = { x: e.clientX, scroll: dom.deck.scrollLeft };
-  deckDragged = false;
-});
-
-addEventListener('pointermove', (e) => {
-  if (!deckDrag) return;
-  const dx = e.clientX - deckDrag.x;
-  if (!deckDragged && Math.abs(dx) < 5) return; // let small wobbles stay clicks
-  deckDragged = true;
-  dom.deck.classList.add('dragging');
-  dom.deck.scrollLeft = deckDrag.scroll - dx;
+function showCases() {
+  const pool = POOLS[state.selected];
+  if (!pool) return;
+  el('casesVerb').textContent = pool.verb;
+  el('casesTitle').textContent = `${pool.title} — case studies`;
+  el('casesGrid').innerHTML = pool.cases
+    .map(
+      (c, i) => `<button class="case-card" data-index="${i}">
+        <img src="${import.meta.env.BASE_URL}media/cases/${c.id}.jpg" alt="" loading="lazy">
+        <span class="client">${c.client}</span>
+        <span class="headline">${c.title}</span>
+      </button>`
+    )
+    .join('');
+  document.body.classList.add('cases-open');
+  el('casesLayer').setAttribute('aria-hidden', 'false');
   state.lastInput = performance.now();
+}
+
+function hideCases() {
+  if (!casesOpen()) return;
+  document.body.classList.remove('cases-open');
+  el('casesLayer').setAttribute('aria-hidden', 'true');
+  state.lastInput = performance.now();
+}
+
+el('casesCta').addEventListener('click', showCases);
+el('casesClose').addEventListener('click', hideCases);
+el('casesLayer').addEventListener('click', (e) => {
+  if (e.target === el('casesLayer')) hideCases();
+});
+el('casesGrid').addEventListener('click', (e) => {
+  const card = e.target.closest('.case-card');
+  if (card) showCase(Number(card.dataset.index));
 });
 
-addEventListener('pointerup', () => {
-  if (!deckDrag) return;
-  deckDrag = null;
-  dom.deck.classList.remove('dragging');
-  // Cleared after the click event this pointerup will fire.
-  setTimeout(() => (deckDragged = false), 0);
-});
 el('videoClose').addEventListener('click', hideVideo);
 el('videoLayer').addEventListener('click', (e) => {
   // Backdrop only — clicking the media or the write-up must not dismiss it.
@@ -588,12 +636,14 @@ function select(i) {
   dom.proof.textContent = pool.proof;
   [...dom.dots.children].forEach((d, k) => d.classList.toggle('on', k === i));
 
-  buildDeck(pool);
+  buildMedia(pool);
 
   pools.forEach((p, k) => {
-    p.targetLift = k === i ? 1 : -0.35;
+    p.targetLift = k === i ? 1 : 0;
     p.targetGlow = k === i ? 1 : 0;
-    p.targetDim = k === i ? 1 : 0.2;
+    p.targetDim = 1;
+    // Everything but the open pool clears out of the way entirely.
+    p.targetFade = k === i ? 1 : 0;
   });
 
   vizCache.forEach((v, k) => (v.object.visible = k === i));
@@ -604,6 +654,7 @@ function select(i) {
 function deselect() {
   if (state.selected < 0) return;
   hideVideo();
+  hideCases();
   state.selected = -1;
   document.body.classList.remove('panel-open');
   dom.overview.classList.remove('hidden');
@@ -614,6 +665,7 @@ function deselect() {
     p.targetLift = 0;
     p.targetGlow = 0;
     p.targetDim = 1;
+    p.targetFade = 1;
   });
   vizCache.forEach((v) => (v.object.visible = false));
   applyTargets();
@@ -685,6 +737,10 @@ addEventListener('keydown', (e) => {
     if (e.key === 'Escape') hideVideo();
     return;
   }
+  if (casesOpen()) {
+    if (e.key === 'Escape') hideCases();
+    return;
+  }
   if (e.key === 'Escape') return deselect();
   if (e.key === 'ArrowRight') return cycle(1);
   if (e.key === 'ArrowLeft') return cycle(-1);
@@ -733,10 +789,11 @@ function tick() {
   current.tiltX = damp(current.tiltX, target.tiltX, 3.4, dt);
   current.tiltY = damp(current.tiltY, target.tiltY, 3.4, dt);
   current.spin = damp(current.spin, target.spin, 2.0, dt);
+  current.roll = damp(current.roll, target.roll, 4.2, dt);
 
   world.position.set(current.x, current.y, 0);
   world.scale.setScalar(current.scale);
-  world.rotation.set(current.tiltX + Math.sin(t * 0.21) * 0.02, current.tiltY + current.spin, 0);
+  world.rotation.set(current.tiltX + Math.sin(t * 0.21) * 0.02, current.tiltY + current.spin, current.roll);
 
   // Per-segment state.
   pools.forEach((p, i) => {
@@ -747,9 +804,15 @@ function tick() {
     p.glow = damp(p.glow, wantGlow, 6, dt);
     p.lift = damp(p.lift, wantLift, 5.5, dt);
     p.dim = damp(p.dim, p.targetDim, 5, dt);
+    // ~0.5s to settle, per the brief: responsive, no sense of a video cut.
+    p.fade = damp(p.fade ?? 1, p.targetFade ?? 1, 9, dt);
+
+    p.holder.visible = p.fade > 0.01;
+    p.materials.forEach((m) => (m.opacity = p.fade));
+    p.labels.forEach((l) => (l.material.opacity = p.fade * (0.18 + p.dim * 0.82)));
 
     p.holder.position.z = p.lift * 0.85 + (state.selected < 0 ? Math.sin(t * 0.8 + i) * 0.045 : 0);
-    p.rimMesh.material.opacity = p.glow * 0.9;
+    p.rimMesh.material.opacity = p.glow * 0.9 * p.fade;
     p.materials.forEach((m, k) => {
       // Navy ring stays neutral at rest; the pool's accent only washes in on
       // hover / select so the board reads as one system.
@@ -761,8 +824,14 @@ function tick() {
         .lerp(new THREE.Color(base), p.dim)
         .lerp(p.accentColor, p.glow * (k === 0 ? 0.42 : 0.3));
     });
-    p.labels.forEach((l) => (l.material.opacity = 0.18 + p.dim * 0.82));
   });
+
+  // Core plate and ring belong to the hexagon view; they clear out when a pool
+  // takes over the screen.
+  const boardAlpha = damp(core.userData.alpha ?? 1, state.selected < 0 ? 1 : 0, 9, dt);
+  core.userData.alpha = boardAlpha;
+  core.visible = boardAlpha > 0.01;
+  corePlateMat.opacity = boardAlpha;
 
   // Centre: the title fades out as a pool's visual takes over.
   const showTitle = state.selected < 0 ? 1 : 0;
@@ -787,7 +856,7 @@ function tick() {
   }
 
   // Interconnect ring rides with the overview state.
-  const ringAlpha = coreTitle.material.opacity;
+  const ringAlpha = coreTitle.material.opacity * boardAlpha;
   ringLine.material.opacity = 0.3 * ringAlpha;
   ringLine.visible = ringAlpha > 0.02;
 

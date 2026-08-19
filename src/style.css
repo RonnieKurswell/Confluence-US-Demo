@@ -232,13 +232,41 @@ body.warp-open .warp {
   object-fit: cover;
 }
 
+/* Pool names called out as you fly through, one after another. */
+.warp-names {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.warp-names span {
+  grid-area: 1 / 1;
+  font-size: clamp(24px, 3vw, 52px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #eaf3ff;
+  text-align: center;
+  text-shadow: 0 0 40px rgba(53, 208, 245, 0.55);
+  opacity: 0;
+}
+body.warp-open .warp-names span {
+  animation: warpName var(--warp-name-ms, 760ms) cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes warpName {
+  0% { opacity: 0; transform: scale(0.82); filter: blur(6px); }
+  35% { opacity: 1; transform: scale(1); filter: blur(0); }
+  70% { opacity: 1; transform: scale(1.04); }
+  100% { opacity: 0; transform: scale(1.5); filter: blur(4px); }
+}
+
 /* ---------- overview ----------
    Occupies exactly the same column as the detail panel, so tapping a value
    pool swaps the copy in place instead of relocating the whole layout. */
 .overview {
   position: fixed;
   top: 0;
-  right: 0;
+  left: 0;
   height: 100%;
   width: var(--panel-w);
   z-index: 10;
@@ -365,23 +393,23 @@ body.warp-open .warp {
 .panel {
   position: fixed;
   top: 0;
-  right: 0;
+  left: 0;
   height: 100%;
   width: var(--panel-w);
   z-index: 20;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: clamp(28px, 4vh, 64px) clamp(28px, 3.4vw, 72px);
+  padding: clamp(96px, 12vh, 132px) clamp(28px, 3.4vw, 72px) clamp(28px, 4vh, 64px);
   /* No card, no frame — the copy floats straight over the scene. A whisper of
      a scrim keeps small text legible against the starfield. */
   background: linear-gradient(
-    270deg,
+    90deg,
     rgba(4, 7, 16, 0.72) 0%,
     rgba(4, 7, 16, 0.42) 46%,
     rgba(4, 7, 16, 0) 100%
   );
-  transform: translateX(4%);
+  transform: translateX(-4%);
   opacity: 0;
   pointer-events: none;
   transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s ease;
@@ -477,116 +505,172 @@ body.warp-open .warp {
   box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 70%, transparent);
 }
 
-/* ---------- media deck ----------
-   Video plus case studies as a swipeable strip of thumbnails, so a pool can
-   carry more than one thing to look at without growing the panel. */
-.deck {
-  display: flex;
-  gap: clamp(10px, 0.9vw, 16px);
-  /* An overflow-x container clips the other axis too, so the hover lift and
-     its glow need real padding to live in — margin-top pulls that back. */
-  padding: 12px 2px 14px;
-  margin-top: calc(clamp(20px, 2.8vh, 34px) - 12px);
-  margin-bottom: -14px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
-  scrollbar-width: none;
-  cursor: grab;
-  /* Fades the strip out at the right edge so it reads as continuing. */
-  mask-image: linear-gradient(90deg, #000 0 88%, transparent 100%);
-  -webkit-mask-image: linear-gradient(90deg, #000 0 88%, transparent 100%);
-}
-.deck::-webkit-scrollbar {
-  display: none;
-}
-/* Snap and smooth scrolling both fight a drag, so they are off mid-drag. */
-.deck.dragging {
-  cursor: grabbing;
-  scroll-snap-type: none;
-  scroll-behavior: auto;
-}
-.deck.dragging .tile {
-  pointer-events: none;
-}
-
-.tile {
+/* ---------- panel media + case studies ----------
+   The film sits inline in the panel; case studies get their own full-screen
+   gallery rather than sharing a carousel with it. */
+.panel-media {
   position: relative;
-  flex: 0 0 auto;
-  width: clamp(150px, 14.5vw, 218px);
+  margin-top: clamp(20px, 2.8vh, 34px);
+  width: 100%;
+  max-width: clamp(320px, 34vw, 560px);
   aspect-ratio: 16 / 9;
   border-radius: 10px;
   overflow: hidden;
   cursor: pointer;
-  scroll-snap-align: start;
-  background: rgba(255, 255, 255, 0.04);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
-  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease;
+  background:
+    radial-gradient(
+      110% 120% at 50% 40%,
+      color-mix(in srgb, var(--accent) 26%, transparent) 0%,
+      transparent 62%
+    ),
+    linear-gradient(158deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.014) 58%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 22px 48px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.tile:hover {
+.panel-media:hover {
   transform: translateY(-3px);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent),
-    0 16px 34px rgba(0, 0, 0, 0.5);
 }
-.tile img {
+.panel-media video {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: none;
 }
-/* Keeps the label legible over any frame of the photography. */
-.tile::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(0deg, rgba(3, 6, 14, 0.86) 0%, rgba(3, 6, 14, 0.1) 52%);
+.panel-media.has-video video {
+  display: block;
 }
-.tile-label {
-  position: absolute;
-  left: 10px;
-  right: 10px;
-  bottom: 9px;
-  z-index: 2;
-  font-size: clamp(8.5px, 0.6vw, 10px);
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+.panel-media.has-video .media-placeholder {
+  display: none;
+}
+
+.cases-cta {
+  margin-top: clamp(14px, 1.8vh, 22px);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85em;
+  padding: 0.95em 1.5em;
+  border: 1px solid rgba(150, 200, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
   color: var(--ink);
-  opacity: 0.9;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-family: inherit;
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--t-eyebrow-track);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
 }
-.tile-play {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
+.cases-cta:hover {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+}
+.cases-count {
   display: grid;
   place-items: center;
-}
-.tile-play span {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  padding-left: 2px;
-  border-radius: 50%;
-  border: 1.5px solid color-mix(in srgb, var(--accent) 65%, transparent);
-  background: color-mix(in srgb, var(--accent) 16%, rgba(4, 7, 16, 0.5));
+  min-width: 1.9em;
+  padding: 0.15em 0.5em;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
   color: var(--accent);
-  font-size: 11px;
 }
-/* The video tile has no still to show until the MP4 lands. */
-.tile-video {
-  background:
-    radial-gradient(
-      110% 120% at 50% 40%,
-      color-mix(in srgb, var(--accent) 28%, transparent) 0%,
-      transparent 64%
-    ),
-    linear-gradient(158deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.015) 60%);
+.cases-arrow {
+  font-size: 1.2em;
+  line-height: 1;
+}
+
+/* Full-screen gallery of the pool's case studies. */
+.cases-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 58;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(20px, 3vh, 38px);
+  padding: clamp(28px, 6vh, 90px) clamp(28px, 5vw, 110px);
+  background: rgba(2, 4, 10, 0.95);
+  backdrop-filter: blur(26px) saturate(0.85);
+  -webkit-backdrop-filter: blur(26px) saturate(0.85);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+body.cases-open .cases-layer {
+  opacity: 1;
+  pointer-events: auto;
+}
+.cases-close {
+  top: clamp(20px, 3vh, 42px);
+  right: clamp(24px, 3vw, 50px);
+}
+.cases-verb {
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--t-eyebrow-track);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.cases-title {
+  margin-top: 8px;
+  font-size: var(--t-title);
+  font-weight: 800;
+  line-height: var(--t-title-lh);
+  letter-spacing: -0.025em;
+}
+.cases-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(16px, 1.8vw, 30px);
+}
+.case-card {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  border: none;
+  padding: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  transform: translateY(14px);
+  opacity: 0;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease;
+}
+body.cases-open .case-card {
+  transform: none;
+  opacity: 1;
+}
+body.cases-open .case-card:nth-child(2) { transition-delay: 0.06s; }
+body.cases-open .case-card:nth-child(3) { transition-delay: 0.12s; }
+.case-card img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.case-card:hover img {
+  transform: translateY(-4px);
+}
+.case-card .client {
+  margin-top: 14px;
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--t-eyebrow-track);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.case-card .headline {
+  margin-top: 6px;
+  font-size: var(--t-body);
+  line-height: 1.35;
+  color: var(--ink);
 }
 
 .proof {
@@ -601,6 +685,37 @@ body.warp-open .warp {
 }
 
 /* close + nav */
+.back {
+  position: absolute;
+  top: clamp(20px, 2.6vh, 36px);
+  left: clamp(28px, 3.4vw, 72px);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7em;
+  padding: 0.8em 1.4em 0.8em 1.1em;
+  border: 1px solid rgba(150, 200, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--t-eyebrow-track);
+  text-transform: uppercase;
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+.back:hover {
+  opacity: 1;
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.09);
+}
+.back-arrow {
+  font-size: 1.25em;
+  line-height: 1;
+}
+
 .close {
   position: absolute;
   top: clamp(20px, 2.6vh, 36px);

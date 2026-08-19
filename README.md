@@ -2,10 +2,9 @@
 
 A three.js show-and-tell for **Confluence US 2026**: the Infosys AI-First Value
 Framework as a touchable 3D hexagon. It opens on a looping video homepage;
-**Begin** drops you into the framework. Tap any of the six value pools and the
-board reconfigures — the segment lifts and takes on its accent colour, the rest
-recede, a procedural 3D visual takes over the centre, and the right-hand column
-swaps to that pool's hook, three points, and a video.
+**Begin** warps you into the framework. Tap any of the six value pools and that
+segment is pushed to the middle of the screen and zoomed into while the others
+fade away, with its hook, three points, film and case studies on the left.
 
 Built for a booth: big hit targets, attract mode, and an idle reset so it looks
 alive when nobody is standing at it.
@@ -35,7 +34,7 @@ stick, a local folder, or any static host — no network needed.
 | --- | --- |
 | **Begin** (or tap anywhere on the intro, or Enter/Space) | Enters the framework |
 | Tap / click a segment | Opens that value pool |
-| Tap the centre or outside the hexagon | Back to the overview |
+| **Back**, or tapping outside the pool | Returns to the hexagon |
 | `1`–`6` | Jump straight to a pool (presenter shortcut) |
 | `←` `→` | Cycle pools |
 | `esc` | Back to the overview |
@@ -73,7 +72,7 @@ Pressing **Begin** plays `public/media/warp.mp4` once before the framework
 appears — a hexagonal wormhole that matches the board's geometry.
 
 The source is 12s. `WARP_MS` in [src/main.js](src/main.js) compresses it via
-`playbackRate`, currently to **2 seconds**; change that one constant to retime
+`playbackRate`, currently to **3 seconds**; change that one constant to retime
 it. Keep it short — every second is a visitor standing at a booth waiting.
 
 It is decorative and can never block entry. A missing file, a blocked
@@ -118,11 +117,10 @@ Specs, the full list and the creative brief live in
 [public/media/README.md](public/media/README.md). 30–60s per pool, muted, 16:9,
 H.264, real-world visuals.
 
-Each pool carries a swipeable deck — the film first, then its case studies.
-Tapping any tile expands it to near-full screen; case studies open with their
-write-up beside the still. Dismiss with the close button, the backdrop, or
-`esc`. Before the MP4s land the expanded film shows the same marked slot, so the
-interaction still demos.
+The film sits inline in the panel and expands to near-full screen on tap. Case
+studies are one step behind their own control, opening a full-screen gallery;
+picking one shows its write-up beside the still, and closing returns to the
+gallery rather than all the way out.
 
 **The case studies are placeholder** — invented text and AI-generated
 thumbnails standing in for the 403 client-masked studies Infosys is tagging.
@@ -148,8 +146,16 @@ Each pool also names its centre visual via `viz`. The six procedural scenes
 - [src/coreviz.js](src/coreviz.js) — the six centre visuals.
 - [src/main.js](src/main.js) — scene, bloom, raycasting, state machine, panel
   wiring, attract/idle behaviour.
-- [src/style.css](src/style.css) — overlay UI. Landscape puts the panel on the
-  right; portrait (a tall kiosk panel) turns it into a bottom sheet.
+- [src/style.css](src/style.css) — overlay UI. Landscape puts the copy column on
+  the left; portrait (a tall kiosk panel) turns it into a bottom sheet.
+
+## Opening a value pool
+
+Selecting a pool pushes that sector to the middle of the free space, rolls it
+square and zooms in, while the other five fade out. Detail copy appears on the
+left with a **Back** control. `FOCUS_SCALE` in [src/main.js](src/main.js) sets
+how far it zooms; the damping is tuned so the move settles in about half a
+second, which is the responsiveness the brief asks for.
 
 ## Booth notes
 
