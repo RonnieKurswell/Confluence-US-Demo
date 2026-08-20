@@ -7,6 +7,10 @@
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <title>Unlock AI Value | Infosys AI-First Value Framework</title>
+    <!-- The two weights used above the fold. Preloaded so the first paint is
+         already in Geist rather than swapping and reflowing. -->
+    <link rel="preload" href="/fonts/Geist-Medium.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/Geist-SemiBold.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <!-- Starts on the intro; main.js drops the class when Begin is pressed. -->
@@ -83,13 +87,13 @@
         <span class="hint-label">Swipe to change pool</span>
       </span>
       <span class="hint-sep" aria-hidden="true"></span>
-      <span class="hint-item">
+      <button class="hint-item hint-action" id="hintFramework" type="button">
         <span class="hint-icon" aria-hidden="true">
           <i class="hint-ripple"></i>
           <i class="hint-finger hint-finger--tap"></i>
         </span>
-        <span class="hint-label">Tap anywhere outside to go back</span>
-      </span>
+        <span class="hint-label">Tap here to see the framework</span>
+      </button>
     </div>
 
     <!-- Warp transition, played once when Begin is pressed -->

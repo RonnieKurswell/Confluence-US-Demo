@@ -18,7 +18,10 @@ export const BRAND = {
     { value: '6', label: 'interconnected value pools, one path' },
   ],
   // One entry per line — the break is deliberate, not left to the measure.
-  statsEyebrow: 'The AI-first value framework',
+  // Dropped after the 20 Aug review: the framework is already established by the
+  // time anyone reaches this card, so the eyebrow was repeating context. Put a
+  // string back here and it reappears.
+  statsEyebrow: '',
   headline: ['Six value pools.', 'Deeply interconnected.'],
   subhead:
     'A structured path to orchestrate data, technology and operations at scale. Beyond experimentation, into the enterprise.',

@@ -15,8 +15,11 @@ import { createConstellation } from './constellation.js';
 const IDLE_RESET_MS = 60_000; // kiosk: drop back to the overview after a minute
 const ATTRACT_AFTER_MS = 9_000; // idle on the overview: start sweeping segments
 const INTRO_RETURN_MS = 90_000; // untouched for this long: back to the intro loop
-const WARP_MS = 6_000; // the 12s wormhole clip, compressed into the jump
-const FOCUS_SCALE = 2.1; // how far the board zooms when a pool is opened
+const WARP_MS = 12_000; // the wormhole clip at its own speed, not compressed
+// The objects need room to arrive before the names start landing on top of
+// them, so the first pool name holds off until the jump is underway.
+const WARP_NAMES_DELAY_MS = 2_500;
+const FOCUS_SCALE = 2.5; // how far the board zooms when a pool is opened (2.1 -> +20%)
 
 /* ------------------------------------------------------------------ *
  * Renderer, scene, camera
@@ -116,11 +119,15 @@ let statsIn = 0;
 
 // Canvas text falls back silently if the face has not loaded, and the board
 // bakes its labels into textures once — so wait for Geist before building.
+// These are the weights the design actually uses — 500 for display and titles,
+// 600 for eyebrows and controls. Awaiting the wrong weights let the board bake
+// its label textures in the fallback face, and the DOM copy paint then reflow,
+// which is the flicker and text crop on first load.
 await Promise.all(
-  ['600 40px Geist', '700 40px Geist', '800 40px Geist'].map((f) =>
-    document.fonts.load(f).catch(() => {})
-  )
+  ['500 40px Geist', '600 40px Geist'].map((f) => document.fonts.load(f).catch(() => {}))
 );
+// Everything above the fold is held until the face is in — see .fonts-ready.
+document.documentElement.classList.add('fonts-ready');
 
 const { group: hexGroup, pools, core, coreTitle, corePlate } = buildHexagon();
 world.add(hexGroup);
@@ -436,6 +443,7 @@ el('beginLabel').textContent = BRAND.intro.cta;
 el('overviewHeadline').innerHTML = BRAND.headline.join('<br>');
 el('overviewSub').textContent = BRAND.subhead;
 el('overviewEyebrow').textContent = BRAND.statsEyebrow;
+el('overviewEyebrow').hidden = !BRAND.statsEyebrow;
 el('facts').innerHTML = BRAND.facts
   .map(
     (f, i) => `<div class="fact">
@@ -540,12 +548,14 @@ function enterExperience() {
 const statsOpen = () => document.body.classList.contains('stats-open');
 
 function leaveStats() {
+  seen.clear();
   document.body.classList.remove('stats-open');
   state.lastInput = performance.now();
 }
 
 function returnToIntro() {
   if (introOpen()) return;
+  seen.clear();
   document.body.classList.remove('stats-open');
   endWarp();
   hideQr();
@@ -565,6 +575,7 @@ function returnToIntro() {
  * a missing file, a blocked play() or a stalled decode all fall through to the
  * framework, and any tap or key skips it. */
 const warpVideo = el('warpVideo');
+const warpOpen = () => document.body.classList.contains('warp-open');
 let warpTimer = null;
 
 resolveVideo('warp').then((url) => {
@@ -600,14 +611,25 @@ function playWarp() {
 
 // The six pools are named as you fly through, so the jump carries the story
 // rather than just being motion. Timing is driven off WARP_MS.
-el('warpNames').innerHTML = POOLS.map(
-  (p, i) =>
-    `<span style="animation-delay:${((i * (WARP_MS * 0.82)) / POOLS.length / 1000).toFixed(2)}s">${p.title}</span>`
-).join('');
-document.documentElement.style.setProperty('--warp-name-ms', `${Math.round(WARP_MS / POOLS.length + 260)}ms`);
+const warpNameWindow = Math.max(1200, WARP_MS - WARP_NAMES_DELAY_MS - 400);
+el('warpNames').innerHTML = POOLS.map((p, i) => {
+  const at = (WARP_NAMES_DELAY_MS + (i * warpNameWindow) / POOLS.length) / 1000;
+  return `<span style="animation-delay:${at.toFixed(2)}s">${p.title}</span>`;
+}).join('');
+document.documentElement.style.setProperty(
+  '--warp-name-ms',
+  `${Math.round(warpNameWindow / POOLS.length + 320)}ms`
+);
 
 warpVideo.addEventListener('ended', endWarp);
 el('warp').addEventListener('click', endWarp);
+
+// The hint doubles as the way back to the framework, so the wording can name a
+// destination instead of describing a gesture.
+el('hintFramework').addEventListener('click', (e) => {
+  e.stopPropagation();
+  deselect();
+});
 
 el('continue').addEventListener('click', leaveStats);
 el('begin').addEventListener('click', enterExperience);
@@ -806,6 +828,7 @@ function swapDirection(from, to) {
 
 function select(i) {
   setPoolBg(i);
+  seen.add(i);
   if (i === state.selected) return;
   const dir = swapDirection(state.selected, i);
   state.selected = i;
@@ -863,7 +886,20 @@ function deselect() {
   applyTargets();
 }
 
-const cycle = (dir) => select((state.selected + dir + POOLS.length) % POOLS.length);
+/* Once a visitor has opened all six, swiping on returns them to the framework
+ * instead of wrapping round to pool one again. Before this they either looped
+ * indefinitely or waited out the idle timer and had to press Begin a second
+ * time. Tapping a pool directly still works at any point. */
+const seen = new Set();
+
+const cycle = (dir) => {
+  const next = (state.selected + dir + POOLS.length) % POOLS.length;
+  if (seen.size >= POOLS.length && seen.has(next)) {
+    deselect();
+    return;
+  }
+  select(next);
+};
 
 // No Back button any more — tapping outside the pool returns to the board, and
 // a horizontal swipe moves between pools. Both are hinted under the object.
@@ -939,6 +975,7 @@ const TOUR_HOLD = {
 const tour = { on: false, token: 0 };
 
 function paintTour() {
+  if (!dom.autoplay.isConnected) return;
   dom.autoplay.setAttribute('aria-pressed', String(tour.on));
   el('autoplayLabel').textContent = tour.on ? 'Playing' : 'Auto play';
 }
@@ -999,7 +1036,16 @@ async function startTour() {
   }
 }
 
-dom.autoplay.addEventListener('click', () => (tour.on ? stopTour() : startTour()));
+/* Auto play was built to show the client the 90-second unattended loop, and it
+ * was agreed on 20 Aug that it should not be part of the final build. Rather
+ * than delete the feature, the control is opt-in: add ?autoplay=1 to the URL to
+ * get the button back for a demo. Nothing shows it by default. */
+const autoplayEnabled = new URLSearchParams(location.search).get('autoplay') === '1';
+if (!autoplayEnabled) {
+  dom.autoplay.remove();
+} else {
+  dom.autoplay.addEventListener('click', () => (tour.on ? stopTour() : startTour()));
+}
 
 // The lockup is the way back to the start from anywhere.
 el('brandHome').addEventListener('click', () => {
@@ -1146,7 +1192,10 @@ function tick() {
   // Core plate and ring belong to the hexagon view; they clear out when a pool
   // takes over the screen.
   // The whole board is held back until the stats page is dismissed.
-  const wantBoard = introOpen() || statsOpen() ? 0 : 1;
+  // The warp has to hold the board back too. Without it the board fades in
+  // behind the wormhole overlay and is briefly visible as that overlay clears,
+  // which reads as the shape flashing and vanishing at the end of the video.
+  const wantBoard = introOpen() || statsOpen() || warpOpen() ? 0 : 1;
   boardIn = damp(boardIn, wantBoard, 6, dt);
   world.visible = boardIn > 0.01;
 

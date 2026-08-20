@@ -37,22 +37,22 @@
   /* ---- type scale ----
      One definition per level of information, shared by the intro, the overview
      and the detail panel, so the same rank always looks the same. */
-  --t-eyebrow: clamp(10px, 0.72vw, 12px);
+  --t-eyebrow: clamp(11.5px, 0.84vw, 13px);
   --t-eyebrow-track: 0.28em;
 
-  --t-display: clamp(38px, 4.4vw, 78px);
+  --t-display: clamp(46px, 5.0vw, 78px);
   --t-display-lh: 0.98;
 
-  --t-title: clamp(22px, 2.5vw, 40px);
+  --t-title: clamp(28px, 2.9vw, 42px);
   --t-title-lh: 1.08;
 
-  --t-lead: clamp(15px, 1.18vw, 21px);
+  --t-lead: clamp(17px, 1.38vw, 22px);
   --t-lead-lh: 1.45;
 
-  --t-body: clamp(13px, 1.02vw, 17px);
+  --t-body: clamp(15px, 1.20vw, 18px);
   --t-body-lh: 1.45;
 
-  --t-caption: clamp(10px, 0.74vw, 12.5px);
+  --t-caption: clamp(11.5px, 0.86vw, 13.5px);
   --t-caption-lh: 1.45;
   --t-caption-track: 0.08em;
 }
@@ -437,7 +437,7 @@ body.warp-open .warp {
 .warp-names span {
   font-family: var(--font-display);
   grid-area: 1 / 1;
-  font-size: clamp(24px, 3vw, 52px);
+  font-size: clamp(30px, 3.4vw, 56px);
   font-weight: 500;
   letter-spacing: -0.01em;
   color: #eaf3ff;
@@ -1035,23 +1035,31 @@ body.cases-open .case-card:nth-child(3) { transition-delay: 0.12s; }
 
 /* close + nav */
 
+/* A bare 50%-opacity cross was there before, and visitors missed it entirely —
+   they used the home button to escape the case gallery instead. It now reads as
+   a button: full strength, a ring, and a ground of its own. */
 .close {
   position: absolute;
   top: clamp(20px, 2.6vh, 36px);
   right: clamp(24px, 2.4vw, 44px);
-  width: 46px;
-  height: 46px;
-  border: none;
-  background: none;
+  width: 52px;
+  height: 52px;
+  border: 1px solid rgba(140, 195, 255, 0.28);
+  border-radius: 50%;
+  background: rgba(8, 18, 38, 0.55);
+  backdrop-filter: blur(10px);
   display: grid;
   place-items: center;
   cursor: pointer;
-  opacity: 0.5;
-  transition: opacity 0.25s ease, transform 0.3s ease;
-}
-.close:hover {
   opacity: 1;
+  transition: background 0.25s ease, border-color 0.25s ease, transform 0.3s ease;
+}
+.close:hover,
+.close:focus-visible {
+  background: rgba(18, 44, 82, 0.75);
+  border-color: rgba(140, 195, 255, 0.55);
   transform: rotate(90deg);
+  outline: none;
 }
 .close span {
   position: absolute;
@@ -1818,4 +1826,47 @@ body.panel-open .pool-bg {
   .panel-swap > .panel-media .media-poster {
     animation: none;
   }
+}
+
+/* ---------- first paint ----------
+   The display face arrives a beat after the stylesheet. Painting the copy in a
+   fallback and swapping it caused a visible flicker, and the metric change
+   cropped the headline mid-word. Hold the copy for that beat instead: main.js
+   adds .fonts-ready once the weights it needs have loaded, and the board waits
+   on the same promise before baking its label textures. */
+html:not(.fonts-ready) .intro-content,
+html:not(.fonts-ready) .overview,
+html:not(.fonts-ready) .panel-inner,
+html:not(.fonts-ready) .brand {
+  opacity: 0;
+}
+.intro-content,
+.overview,
+.panel-inner,
+.brand {
+  transition: opacity 0.32s ease;
+}
+
+/* ---------- the framework hint is a real control ----------
+   It used to read "Tap anywhere outside to go back", which tested badly: it
+   describes a gesture rather than a destination, and nothing looked pressable.
+   Tapping outside still works, but this now says where it goes and can be
+   pressed, which is what visitors reached for anyway. */
+.hint-action {
+  border: 1px solid rgba(140, 195, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(120, 180, 255, 0.06);
+  padding: 0.5em 1em 0.5em 0.75em;
+  margin: -0.5em -0.35em;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+.hint-action:hover,
+.hint-action:focus-visible {
+  background: rgba(120, 180, 255, 0.14);
+  border-color: rgba(140, 195, 255, 0.45);
+  outline: none;
 }
