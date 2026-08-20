@@ -640,6 +640,11 @@ body.stats-open .overview > *:nth-child(5) { transition-delay: 0.72s; }
   display: flex;
   align-items: center;
   gap: 12px;
+  padding: 0.85em 1.5em;
+  border-radius: 999px;
+  background: rgba(4, 7, 16, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   font-family: var(--font-display);
   font-size: var(--t-eyebrow);
   font-weight: 500;
@@ -655,27 +660,6 @@ body.panel-open .prompt {
   opacity: 0;
   /* the breathe animation animates opacity, so it has to stop too */
   animation: none;
-}
-.prompt {
-  font-family: var(--font-display);
-  opacity: 0;
-  /* the breathe animation animates opacity, so it has to stop too */
-  animation: none;
-}
-.prompt-ring {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 1.5px solid var(--accent);
-  position: relative;
-}
-.prompt-ring::after {
-  content: "";
-  position: absolute;
-  inset: -6px;
-  border-radius: 50%;
-  border: 1.5px solid var(--accent);
-  animation: ping 2.2s ease-out infinite;
 }
 @keyframes ping {
   0% { transform: scale(0.55); opacity: 0.9; }

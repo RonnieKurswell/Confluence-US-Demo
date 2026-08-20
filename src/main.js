@@ -331,10 +331,23 @@ function applyTargets() {
 
   if (state.selected < 0) {
     // Nothing shares the hexagon screen any more — the stats moved to their own
-    // page — so the board sits centred rather than shifted off a column.
+    // page — so the board sits centred rather than shifted off a column, and it
+    // can use the room the old fact strip used to take.
+    //
+    // Solved against the frustum rather than hard-coded: the camera pulls back
+    // by aspect (see layout), so a fixed scale that filled a 16:9 kiosk would
+    // overflow a portrait panel. Board spans 2R point-to-point and 2R*cos30
+    // across the flats; leave a little for the labels and the outer glow.
+    const boardH = R * 2 * 1.02;
+    const boardW = R * 2 * Math.cos(Math.PI / 6) * 1.02;
+    // 0.8, not more: the tap sign is parked just under the board's bottom
+    // vertex, and at a tighter fill it fell off the bottom of the screen.
+    const fill = Math.min((worldH * 0.8) / boardH, (worldW * 0.9) / boardW);
     target.x = 0;
-    target.y = state.isPortrait ? worldH * 0.04 : 0;
-    target.scale = 1;
+    // Lifted slightly in landscape so the room left over sits under the board,
+    // where the tap sign goes, rather than being split evenly above and below.
+    target.y = state.isPortrait ? worldH * 0.04 : worldH * 0.025;
+    target.scale = Math.max(1, fill);
     target.tiltX = 0;
     target.tiltY = 0;
     target.roll = nearestTurn(0, current.roll);
@@ -1217,7 +1230,7 @@ function tick() {
 
   // Park the "touch a value pool" prompt just below the board. Projecting the
   // bottom vertex keeps it attached however the board is scaled or shifted.
-  if (!state.isPortrait && state.selected < 0) {
+  if (state.selected < 0) {
     projected.set(0, -R * 1.06, 0);
     hexGroup.localToWorld(projected).project(camera);
     const px = Math.round((projected.x * 0.5 + 0.5) * innerWidth);
@@ -1280,6 +1293,11 @@ requestAnimationFrame(tick);
 
   const clamp = (n, max) => Math.min(Math.max(Number(n) || 0, 0), max);
   enterExperience();
+  // enterExperience lands on the stats card, which is right for a visitor but
+  // not for a deep link: every screen below it sits past that card, so leaving
+  // the class on rendered the title card on top of the target screen.
+  endWarp();
+  leaveStats();
   if (screen !== 'overview') select(clamp(q.get('pool'), POOLS.length - 1));
   if (screen === 'video') showVideo();
   if (screen === 'case') showCase(clamp(q.get('case'), 2));
@@ -1290,6 +1308,9 @@ requestAnimationFrame(tick);
     p.lift = p.targetLift;
     p.glow = p.targetGlow;
     p.dim = p.targetDim;
+    // fade was missing, so a deep link into a pool still showed the other five
+    // fading out from full strength.
+    p.fade = p.targetFade;
   });
   coreTitle.material.opacity = state.selected < 0 ? 1 : 0;
 })();

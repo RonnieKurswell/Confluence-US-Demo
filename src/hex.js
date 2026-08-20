@@ -84,15 +84,19 @@ function makeTextTexture(text, opts = {}) {
   // Display face, matching the CSS — see --font-display.
   const font = (s) => `${weight} ${s}px Geist, Helvetica, Arial, sans-serif`;
 
-  // Shrink to fit the longest row.
-  ctx.font = font(fontSize);
+  // Shrink to fit BOTH axes. Fitting width alone let a two-line title overrun
+  // the canvas vertically — the long pool names were being drawn taller than
+  // the texture and so spilled outside their band on the board.
   const maxW = width * 0.92;
-  let widest = Math.max(...rows.map((r) => ctx.measureText(r).width + tracking * r.length));
-  while (widest > maxW && fontSize > 10) {
-    fontSize -= 2;
+  const maxH = height * 0.9;
+  const widest = () => {
     ctx.font = font(fontSize);
-    widest = Math.max(...rows.map((r) => ctx.measureText(r).width + tracking * r.length));
+    return Math.max(...rows.map((r) => ctx.measureText(r).width + tracking * r.length));
+  };
+  while ((widest() > maxW || rows.length * fontSize * 1.16 > maxH) && fontSize > 10) {
+    fontSize -= 2;
   }
+  ctx.font = font(fontSize);
 
   const lineH = fontSize * 1.16;
   const top = height / 2 - ((rows.length - 1) * lineH) / 2;
@@ -194,20 +198,27 @@ export function buildHexagon() {
     });
     const rimMesh = new THREE.Mesh(extrude(rimShape, BANDS.outer.depth * 1.05), rimMat);
 
+    // Width is set by the trapezoid's NARROW end, not its middle: at the inner
+    // edge the band is only 0.795R across, so a plane sized to the mid-radius
+    // pushes the ends of a long title out past the seam.
     const titleLabel = labelMesh(
       pool.title,
       theta,
       BANDS.outer.labelR,
-      R * 0.8,
-      R * 0.16,
-      { lines: wrapTitle(pool.title), size: 96, weight: 500, width: 1024, height: 205 }
+      R * 0.72,
+      R * 0.19,
+      // 78, not 96: every title bakes at one size so the board reads evenly, and
+      // at 96 the two long names ("Agentic Legacy Modernization", "AI Strategy &
+      // Engineering") sat within a few percent of their band edge. With the glow
+      // on top that read as spilling out. 78 leaves every title ~38% or more.
+      { lines: wrapTitle(pool.title), size: 78, weight: 500, width: 1024, height: 270 }
     );
-    const verbLabel = labelMesh(pool.verb, theta, BANDS.inner.labelR, R * 0.52, R * 0.095, {
+    const verbLabel = labelMesh(pool.verb, theta, BANDS.inner.labelR, R * 0.46, R * 0.085, {
       size: 78,
       weight: 600,
       tracking: 12,
       width: 1024,
-      height: 160,
+      height: 190,
       color: '#dfefff',
     });
     // Labels sit just clear of the bevelled front face of each band.
