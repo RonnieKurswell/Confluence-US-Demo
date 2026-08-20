@@ -889,6 +889,7 @@ function select(i) {
 
 function deselect() {
   setPoolBg(-1);
+  seen.clear();
   if (state.selected < 0) return;
   hideVideo();
   hideCases();
@@ -916,7 +917,14 @@ const seen = new Set();
 
 const cycle = (dir) => {
   const next = (state.selected + dir + POOLS.length) % POOLS.length;
-  if (seen.size >= POOLS.length && seen.has(next)) {
+  // Tour finished: swiping ON from the last pool lands back on the framework
+  // instead of looping round again.
+  //
+  // Forward only. The first version fired on any direction once all six were
+  // in `seen`, and since every pool was then in the set it matched every time —
+  // so swiping stopped working entirely and only ever bounced you out. A back
+  // swipe is someone re-reading, not finishing.
+  if (dir > 0 && seen.size >= POOLS.length) {
     deselect();
     return;
   }
