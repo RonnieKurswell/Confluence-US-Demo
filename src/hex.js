@@ -68,6 +68,8 @@ function makeTextTexture(text, opts = {}) {
     tracking = 0,
     color = '#ffffff',
     lines = null,
+    lineFactor = 1.16,
+    fitH = 0.9,
   } = opts;
 
   const c = document.createElement('canvas');
@@ -88,17 +90,17 @@ function makeTextTexture(text, opts = {}) {
   // the canvas vertically — the long pool names were being drawn taller than
   // the texture and so spilled outside their band on the board.
   const maxW = width * 0.92;
-  const maxH = height * 0.9;
+  const maxH = height * fitH;
   const widest = () => {
     ctx.font = font(fontSize);
     return Math.max(...rows.map((r) => ctx.measureText(r).width + tracking * r.length));
   };
-  while ((widest() > maxW || rows.length * fontSize * 1.16 > maxH) && fontSize > 10) {
+  while ((widest() > maxW || rows.length * fontSize * lineFactor > maxH) && fontSize > 10) {
     fontSize -= 2;
   }
   ctx.font = font(fontSize);
 
-  const lineH = fontSize * 1.16;
+  const lineH = fontSize * lineFactor;
   const top = height / 2 - ((rows.length - 1) * lineH) / 2;
   rows.forEach((row, i) => {
     if (tracking) {
@@ -198,20 +200,39 @@ export function buildHexagon() {
     });
     const rimMesh = new THREE.Mesh(extrude(rimShape, BANDS.outer.depth * 1.05), rimMat);
 
-    // Width is set by the trapezoid's NARROW end, not its middle: at the inner
+    // Two separate constraints, and both were being got wrong.
+    //
+    // WIDTH is set by the trapezoid's NARROW end, not its middle: at the inner
     // edge the band is only 0.795R across, so a plane sized to the mid-radius
     // pushes the ends of a long title out past the seam.
+    //
+    // HEIGHT is set by the FLAT TOP FACE, which is the band's 1.025 thickness
+    // minus the bevel on both sides — 0.935. The plane used to be 0.950, so its
+    // edges overhung the bevel, and as the board tilts and spins the bevel wall
+    // occludes them. That is the label appearing to shrink and clip and then
+    // recover, on the period of the idle spin.
+    //
+    // Size can now go UP rather than down: single-line titles bake at 110, and
+    // the fit loop pulls the two-line ones back to ~72 on its own, so both sit
+    // near 40-55% of the flat face instead of 91%.
     const titleLabel = labelMesh(
       pool.title,
       theta,
       BANDS.outer.labelR,
       R * 0.72,
-      R * 0.19,
-      // 78, not 96: every title bakes at one size so the board reads evenly, and
-      // at 96 the two long names ("Agentic Legacy Modernization", "AI Strategy &
-      // Engineering") sat within a few percent of their band edge. With the glow
-      // on top that read as spilling out. 78 leaves every title ~38% or more.
-      { lines: wrapTitle(pool.title), size: 78, weight: 500, width: 1024, height: 270 }
+      R * 0.155,
+      {
+        lines: wrapTitle(pool.title),
+        // 100 with a 0.78 height budget, so single-line titles bake at 100 and
+        // the two-line ones settle at 80. A bigger budget spread them 110/72,
+        // which read as two different type sizes on one board.
+        size: 100,
+        weight: 500,
+        width: 1024,
+        height: 220,
+        lineFactor: 1.05,
+        fitH: 0.78,
+      }
     );
     const verbLabel = labelMesh(pool.verb, theta, BANDS.inner.labelR, R * 0.46, R * 0.085, {
       size: 78,

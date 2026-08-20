@@ -40,7 +40,7 @@
   --t-eyebrow: clamp(11.5px, 0.84vw, 13px);
   --t-eyebrow-track: 0.28em;
 
-  --t-display: clamp(46px, 5.0vw, 78px);
+  --t-display: clamp(46px, 6.4vw, 136px);
   --t-display-lh: 0.98;
 
   --t-title: clamp(28px, 2.9vw, 42px);

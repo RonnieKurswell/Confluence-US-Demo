@@ -19,6 +19,13 @@ const WARP_MS = 12_000; // the wormhole clip at its own speed, not compressed
 // The objects need room to arrive before the names start landing on top of
 // them, so the first pool name holds off until the jump is underway.
 const WARP_NAMES_DELAY_MS = 2_500;
+// The clip ends on a white flash, and white text over it is unreadable. Names
+// finish this far before the end so they are gone before the fade begins.
+// Retime this if the tail of John's video changes.
+const WARP_TAIL_MS = 3_200;
+// Each name's own animation. Shorter than the gap between them, so one clears
+// before the next arrives rather than the two overlapping into mush.
+const WARP_NAME_MS = 1_100;
 const FOCUS_SCALE = 2.5; // how far the board zooms when a pool is opened (2.1 -> +20%)
 
 /* ------------------------------------------------------------------ *
@@ -624,15 +631,17 @@ function playWarp() {
 
 // The six pools are named as you fly through, so the jump carries the story
 // rather than just being motion. Timing is driven off WARP_MS.
-const warpNameWindow = Math.max(1200, WARP_MS - WARP_NAMES_DELAY_MS - 400);
+// Solve the step so the LAST name finishes exactly at the start of the tail,
+// rather than spreading the names across the whole clip and running into it.
+const warpNameStep = Math.max(
+  260,
+  (WARP_MS - WARP_TAIL_MS - WARP_NAMES_DELAY_MS - WARP_NAME_MS) / (POOLS.length - 1)
+);
 el('warpNames').innerHTML = POOLS.map((p, i) => {
-  const at = (WARP_NAMES_DELAY_MS + (i * warpNameWindow) / POOLS.length) / 1000;
+  const at = (WARP_NAMES_DELAY_MS + i * warpNameStep) / 1000;
   return `<span style="animation-delay:${at.toFixed(2)}s">${p.title}</span>`;
 }).join('');
-document.documentElement.style.setProperty(
-  '--warp-name-ms',
-  `${Math.round(warpNameWindow / POOLS.length + 320)}ms`
-);
+document.documentElement.style.setProperty('--warp-name-ms', `${WARP_NAME_MS}ms`);
 
 warpVideo.addEventListener('ended', endWarp);
 el('warp').addEventListener('click', endWarp);
