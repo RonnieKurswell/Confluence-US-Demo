@@ -15,7 +15,13 @@ export const BRAND = {
   facts: [
     { value: '$300–400B', label: 'AI-first services opportunity by 2030' },
     { value: '90%', label: 'of our top 200 clients on an AI journey' },
-    { value: '6', label: 'interconnected value pools, one path' },
+    // ---------------------------------------------------------------------
+    // NEEDS NITIN'S SIGN-OFF before the event. The number comes from the
+    // client-masked case studies his team is tagging (403 at the 14 Aug
+    // review, 113 offerings mapped). Rounded down to 400+ so it does not go
+    // stale. Confirm it is public-safe and still current, or swap the figure.
+    // ---------------------------------------------------------------------
+    { value: '400+', label: 'client case studies behind the framework' },
   ],
   // One entry per line — the break is deliberate, not left to the measure.
   // Dropped after the 20 Aug review: the framework is already established by the
