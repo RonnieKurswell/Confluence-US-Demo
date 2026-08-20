@@ -507,6 +507,11 @@ body.stats-open .overview > *:nth-child(5) { transition-delay: 0.72s; }
   text-transform: uppercase;
   color: var(--accent);
 }
+/* display:inline-flex above would otherwise beat the [hidden] default, leaving
+   an empty span that still draws its two rules. Same trap as .brand-logo. */
+.overview-eyebrow[hidden] {
+  display: none;
+}
 .overview-eyebrow::before,
 .overview-eyebrow::after {
   content: "";

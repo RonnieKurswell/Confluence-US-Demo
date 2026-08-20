@@ -4,10 +4,10 @@
 
 export const BRAND = {
   // Top-left lockup: the Infosys mark, a rule, then this line.
-  brandLine: 'Unlock AI value',
+  brandLine: 'Unlock AI Value',
   centerTitle: ['UNLOCK', 'AI VALUE'],
   intro: {
-    headline: 'Unlock AI value',
+    headline: 'Unlock AI Value',
     sub: 'Six value pools, one path to transformation.',
     cta: 'Begin',
   },
