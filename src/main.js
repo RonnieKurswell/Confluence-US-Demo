@@ -1189,7 +1189,15 @@ function tick() {
   pools.forEach((p, i) => {
     const isHot = i === state.hovered || i === state.attract;
     const wantGlow = state.selected === i ? 1 : isHot && state.selected < 0 ? 0.65 : p.targetGlow;
-    const wantLift = state.selected < 0 && isHot ? 0.35 : p.targetLift;
+    // The attract sweep glows but does NOT lift. Lifting moves the sector
+    // toward the camera, and under perspective that scaled it up about 1.8% —
+    // roughly 5px on a 297px band — so every 1.6s one sector grew and the
+    // previous one shrank. Around the ring that read as the board bugging out
+    // rather than as a highlight travelling over it.
+    //
+    // Hover keeps the lift: it is pointer affordance, only one sector at a
+    // time, and it never fires on the kiosk touchscreen.
+    const wantLift = state.selected < 0 && i === state.hovered ? 0.35 : p.targetLift;
 
     p.glow = damp(p.glow, wantGlow, 6, dt);
     p.lift = damp(p.lift, wantLift, 5.5, dt);
