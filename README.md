@@ -208,8 +208,18 @@ Two knobs:
 A missing texture leaves the quad blank and the base colour shows, the same
 resolve-if-present behaviour as the videos, so a bad filename never breaks it.
 
-**These are placeholder**, generated with `openai/gpt-image-2` — abstract, one
-accent hue each, with the left half deliberately empty for the copy.
+**These are placeholder**, and as of the 25 Aug review they are also **interim**.
+Huw's call is that every background is a single blue tone, soft 3D and slightly
+realistic, rather than one hue per pool. Evelyn is producing the real set, two to
+three options per pool, working from the Physical AI visual in the intro video.
+
+Until those land, the generated plates have been re-graded to a navy-to-blue
+duotone so the demo reads coherently. Structure and brightness are unchanged, only
+hue. Replacing them is a straight file swap.
+
+The six accents moved with them: they are now one blue family running light cyan
+to deep navy rather than six separate hues. Differentiation between pools comes
+from the imagery now, not from colour.
 
 They were generated far too dark to see (17-34 mean luminance on their open side,
 against a page ground of ~6) and then normalised: each plate is brightness-scaled

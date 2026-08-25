@@ -93,7 +93,7 @@ export const POOLS = [
         metric: { value: '0', label: 'records exposed' },
       },
     ],
-    accent: 0x35d0f5,
+    accent: 0x5ad2f5, // Data for AI          light cyan-blue
     viz: 'lattice',
   },
   {
@@ -136,7 +136,7 @@ export const POOLS = [
         metric: { value: '6', label: 'weeks to onboard a tool' },
       },
     ],
-    accent: 0x4f9dff,
+    accent: 0x4f9dff, // AI Strategy          core blue, unchanged
     viz: 'orbit',
   },
   {
@@ -179,7 +179,7 @@ export const POOLS = [
         metric: { value: '3', label: 'regimes satisfied' },
       },
     ],
-    accent: 0x7ee0c0,
+    accent: 0x7fc4ff, // AI Trust             pale sky, was mint
     viz: 'shield',
   },
   {
@@ -222,7 +222,7 @@ export const POOLS = [
         metric: { value: '22%', label: 'more moves per hour' },
       },
     ],
-    accent: 0xffb454,
+    accent: 0x3f86e0, // Physical AI          mid blue, was amber
     viz: 'pulse',
   },
   {
@@ -265,7 +265,7 @@ export const POOLS = [
         metric: { value: '60%', label: 'faster change cycle' },
       },
     ],
-    accent: 0xb08bff,
+    accent: 0x5a7fd6, // Agentic Legacy       slate blue, was violet
     viz: 'rebuild',
   },
   {
@@ -308,7 +308,7 @@ export const POOLS = [
         metric: { value: '35%', label: 'reduction in delay cost' },
       },
     ],
-    accent: 0xff7ab0,
+    accent: 0x2e63c8, // Process AI           deep navy, was pink
     viz: 'flow',
   },
 ];
