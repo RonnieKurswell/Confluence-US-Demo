@@ -208,31 +208,29 @@ Two knobs:
 A missing texture leaves the quad blank and the base colour shows, the same
 resolve-if-present behaviour as the videos, so a bad filename never breaks it.
 
-**These are placeholder**, and as of the 25 Aug review they are also **interim**.
-Huw's call is that every background is a single blue tone, soft 3D and slightly
-realistic, rather than one hue per pool. Evelyn is producing the real set, two to
-three options per pool, working from the Physical AI visual in the intro video.
+**These are Evelyn's, exported from Figma on 28 Aug.** They replace the generated
+placeholders entirely, so nothing in this folder is stand-in artwork any more.
 
-Until those land, the generated plates have been re-graded to a navy-to-blue
-duotone so the demo reads coherently. Structure and brightness are unchanged, only
-hue. Replacing them is a straight file swap.
+Source: the `Backgrounds 3.0` page, `For Demo` row. Each section frame there holds
+the full-resolution background as a separate image fill under the mockup UI, so
+the plates are pulled clean with no text baked in. They are centre-cropped to
+16:9 and saved at 1600x900, matching what the plate quads sample.
 
-The six accents moved with them: they are now one blue family running light cyan
-to deep navy rather than six separate hues. Differentiation between pools comes
-from the imagery now, not from colour.
+Art direction from the 25 Aug review: one blue tone throughout, soft 3D and
+slightly realistic, with the pools separated by subject rather than by hue. The
+six subjects are a datacenter, a city plaza, a dashboard field, an industrial
+floor, a smart city, and a process hub.
 
-They were generated far too dark to see (17-34 mean luminance on their open side,
-against a page ground of ~6) and then normalised: each plate is brightness-scaled
-so all six land at the same ~57 mean, measured rather than eyeballed, so no pool
-reads noticeably stronger than its neighbours. That correction is **baked into
-the files**, which is why they should be re-measured if any one of them is
-replaced. 1600x900 JPEG, ~580 KB for all six.
+They run brighter than the plates they replace, roughly 64 to 75 mean against 41
+to 54 before. That was checked rather than assumed: compositing the plate at
+`PLATE_OPACITY` over the scene and applying both `.pool-bg` scrim layers, the
+worst contrast anywhere in the copy column is 4.85:1, which still clears the 4.5
+needed for body text. Most of the column sits between 6:1 and 17:1. So the scrim
+did not need changing.
 
-They are **stills, not video**. Six looping background clips would add tens of
-megabytes on top of the intro, the warp and the six pool films, on a bundle that
-has to work off a USB stick and over conference wifi. If a moving background is
-wanted later, the cheaper route is animating these plates in CSS — the slow
-`transform: scale()` already on `.pool-bg-plate` is that hook.
+If a future set comes in brighter still, re-run that check before shipping it.
+The copy column is the left third; the danger zone is its right edge, around 44%
+across, where the scrim has already faded out.
 
 ## Dropping in videos
 
