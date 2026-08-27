@@ -209,6 +209,23 @@ const plateTextures = POOLS.map((pool) => {
   return tex;
 });
 
+// The stats page and the framework overview get their own plates. They are
+// designed to sit at full strength: the stats plate already carries the tint
+// Evelyn puts over it in Figma, and the overview plate is dark by design, so
+// dimming either one to PLATE_OPACITY would just muddy artwork that is already
+// balanced for the copy sitting on it.
+const loadPlate = (name) => {
+  const tex = plateLoader.load(
+    `${import.meta.env.BASE_URL}media/backgrounds/${name}.jpg`,
+    undefined,
+    undefined,
+    () => {}
+  );
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+};
+const STAGE_PLATES = { stats: loadPlate('stats'), overview: loadPlate('overview') };
+
 const platePair = [0, 1].map(() => {
   const mat = new THREE.MeshBasicMaterial({
     transparent: true,
@@ -230,8 +247,7 @@ const platePair = [0, 1].map(() => {
 // Which of the pair is currently showing, and what each is fading toward.
 const plateState = { front: 0, target: [0, 0] };
 
-function setPoolBg(i) {
-  const tex = i >= 0 ? plateTextures[i] : null;
+function setPlate(tex, strength = PLATE_OPACITY) {
   if (tex && platePair[plateState.front].material.map === tex) return;
   if (!tex) {
     plateState.target = [0, 0];
@@ -243,7 +259,17 @@ function setPoolBg(i) {
   platePair[next].material.needsUpdate = true;
   platePair[next].visible = true;
   plateState.front = next;
-  plateState.target = next === 0 ? [PLATE_OPACITY, 0] : [0, PLATE_OPACITY];
+  plateState.target = next === 0 ? [strength, 0] : [0, strength];
+}
+
+// Which plate belongs to the moment. Driven by the stage rather than by
+// select(), so the stats page and the empty board get one too and not just an
+// open pool. Called every frame; setPlate is a no-op when nothing has changed.
+function resolvePlate() {
+  if (introOpen() || warpOpen()) setPlate(null);
+  else if (statsOpen()) setPlate(STAGE_PLATES.stats, 1);
+  else if (state.selected >= 0) setPlate(plateTextures[state.selected]);
+  else setPlate(STAGE_PLATES.overview, 1);
 }
 
 const vizCache = new Map();
@@ -849,7 +875,6 @@ function swapDirection(from, to) {
 }
 
 function select(i) {
-  setPoolBg(i);
   seen.add(i);
   if (i === state.selected) return;
   const dir = swapDirection(state.selected, i);
@@ -888,7 +913,6 @@ function select(i) {
 }
 
 function deselect() {
-  setPoolBg(-1);
   seen.clear();
   if (state.selected < 0) return;
   hideVideo();
@@ -1173,10 +1197,13 @@ function tick() {
   current.roll = damp(current.roll, target.roll, 4.2, dt);
   current.labelFlip = damp(current.labelFlip, target.labelFlip, 4.2, dt);
 
-  // Cross-fade the background plates. Held back with the board, so the intro and
-  // the stats page stay on the plain ground.
+  resolvePlate();
+
+  // Cross-fade the background plates. The intro and the warp stay on the plain
+  // ground; everything else rides whichever stage is coming up.
+  const plateVis = introOpen() || warpOpen() ? 0 : statsOpen() ? statsIn : boardIn;
   platePair.forEach((mesh, k) => {
-    const want = plateState.target[k] * (state.selected < 0 ? 0 : 1) * boardIn;
+    const want = plateState.target[k] * plateVis;
     mesh.material.opacity = damp(mesh.material.opacity, want, 2.6, dt);
     mesh.visible = mesh.material.opacity > 0.004;
   });
@@ -1352,6 +1379,8 @@ window.__demo = {
   tour,
   TOUR_HOLD,
   platePair,
+  resolvePlate,
+  STAGE_PLATES,
   select,
   deselect,
   current,

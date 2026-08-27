@@ -232,6 +232,31 @@ If a future set comes in brighter still, re-run that check before shipping it.
 The copy column is the left third; the danger zone is its right edge, around 44%
 across, where the scrim has already faded out.
 
+### The two stage plates
+
+`stats.jpg` and `overview.jpg` back the stats title card and the framework
+overview. Those two screens used to sit on the plain ground, so unlike the pool
+plates they needed wiring as well as exporting: `resolvePlate()` now picks the
+plate from the stage each frame rather than only when a pool is selected, and
+both render at full strength instead of `PLATE_OPACITY`.
+
+They came out of the frames as single image nodes overflowing the artboard, so
+exporting the node gives the plate already cropped to 16:9 with no UI on it.
+
+The stats plate carries a flat multiply layer in Figma that its isolated export
+does not include. Comparing Evelyn's rendered frame against the clean plate gives
+a per-channel ratio of 0.268, 0.520, 0.725, consistent to within 0.002 across
+every clean region, so it is a pure multiply and is baked into the file. The
+result matches her frame to within half a level per channel. The overview plate
+needed nothing: its clean export already matches her frame.
+
+Adding the stats plate cost the sub-paragraph its legibility, since the light
+shaft in the artwork lands exactly where that line sits. Measured against the
+real element boxes at 1920x1080 it fell to 2.67:1 against `--ink-soft`, under the
+4.5 body text needs. `body.stats-open .pool-bg` puts a soft centred scrim behind
+the copy, which lifts it to 5.56:1 and leaves the artwork alone. Every other
+element on that page clears its threshold with room to spare.
+
 ## Dropping in videos
 
 Put an MP4 in `public/media/` named after the pool and it appears automatically

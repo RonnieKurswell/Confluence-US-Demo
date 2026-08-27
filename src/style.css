@@ -1724,6 +1724,21 @@ body.warp-open .autoplay {
 body.panel-open .pool-bg {
   opacity: 1;
 }
+/* The stats plate is Evelyn's brightest, and its light shaft lands exactly
+ * where the sub-paragraph sits. Measured against the real element boxes at
+ * 1920x1080, that line was reading 2.67:1 against ink-soft, well under the 4.5
+ * body text needs. This lifts it to about 5:1 without touching the artwork, and
+ * fades out well before the edges so the hexagon field still carries the frame.
+ * Centred rather than left-weighted because this page centres its copy. */
+body.stats-open .pool-bg {
+  opacity: 1;
+  background: radial-gradient(
+    74% 64% at 50% 46%,
+    rgba(4, 6, 14, 0.5) 0%,
+    rgba(4, 6, 14, 0.34) 55%,
+    rgba(4, 6, 14, 0) 100%
+  );
+}
 @media (max-aspect-ratio: 1/1) {
   .pool-bg {
     background:
