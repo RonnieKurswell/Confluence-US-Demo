@@ -304,7 +304,15 @@ body.stats-open .hint {
   background: rgba(4, 7, 16, 0.55);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  white-space: nowrap;
+  /* The two gestures never break mid-phrase, but the pill itself has to be
+     able to fold. It is around 700px wide and nowrap, so on anything narrower
+     than about 760px it used to run off both edges rather than wrap. Capping
+     it to the space between the margins means it can never overhang, at any
+     width, whichever font ends up loading. */
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: calc(100vw - 2 * clamp(28px, 3.4vw, 72px));
+  row-gap: 0.5em;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.5s ease;
@@ -322,6 +330,7 @@ body.cases-open .pool-hint {
   display: flex;
   align-items: center;
   gap: 0.7em;
+  white-space: nowrap;
 }
 .hint-label {
   font-family: var(--font-display);
