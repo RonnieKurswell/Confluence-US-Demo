@@ -287,10 +287,15 @@ body.stats-open .hint {
 /* Instruction under the open pool, in place of a Back button. Both gestures
    are shown as well as named — a static line of text was being ignored.
 
-   Right-aligned rather than centred on the viewport, so it sits under the board
-   and squares up with the copy column opposite. The inset is the same
-   expression as the panel's horizontal padding, so the left and right margins
-   stay equal at every width instead of only at one. */
+   Right-aligned so it sits under the board and squares up with the copy column
+   opposite. The inset is the same expression as the panel's horizontal padding,
+   so the left and right margins stay equal at every width rather than only at
+   one.
+
+   This anchors on `right` for a reason: the render loop used to write an inline
+   `left` here every frame to track the selected sector's centre, and an inline
+   style beats the stylesheet. If the pill ever drifts or runs off an edge
+   again, look for JS setting `style.left` before touching this rule. */
 .pool-hint {
   position: fixed;
   right: clamp(28px, 3.4vw, 72px);

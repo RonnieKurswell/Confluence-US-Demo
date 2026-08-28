@@ -1160,7 +1160,6 @@ const clock = new THREE.Clock();
 const projected = new THREE.Vector3();
 let boardIn = 0; // 0 while the intro or stats page is up, 1 on the board
 const promptAt = { x: -1, y: -1 };
-const hintAt = { x: -1, y: -1 };
 
 function tick() {
   const dt = Math.min(clock.getDelta(), 0.05);
@@ -1295,23 +1294,11 @@ function tick() {
     }
   }
 
-  // The instruction stays pinned to the bottom of the screen — tracking each
-  // sector's own extent moved it around between pools, which read as a bug.
-  // Only the horizontal centre follows the board.
-  if (state.selected >= 0 && !state.isPortrait) {
-    const pool = pools[state.selected];
-    let sumX = 0;
-    for (const corner of pool.corners) {
-      projected.copy(corner);
-      hexGroup.localToWorld(projected).project(camera);
-      sumX += (projected.x * 0.5 + 0.5) * innerWidth;
-    }
-    const px = Math.round(sumX / pool.corners.length);
-    if (px !== hintAt.x) {
-      hintAt.x = px;
-      dom.poolHint.style.left = `${px}px`;
-    }
-  }
+  // The instruction used to track the selected sector's horizontal centre by
+  // writing an inline `left` here every frame. That inline value beat the
+  // stylesheet, so once the pill stopped being centred on that point it ran
+  // off the right edge. It is anchored by its right edge in CSS now, squared
+  // up with the copy column, and needs no help from the loop.
 
   // Interconnect ring rides with the overview state.
   const ringAlpha = coreTitle.material.opacity * boardAlpha * boardIn;
