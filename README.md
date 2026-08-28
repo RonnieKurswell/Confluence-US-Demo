@@ -211,10 +211,20 @@ resolve-if-present behaviour as the videos, so a bad filename never breaks it.
 **These are Evelyn's, exported from Figma on 28 Aug.** They replace the generated
 placeholders entirely, so nothing in this folder is stand-in artwork any more.
 
-Source: the `Backgrounds 3.0` page, `For Demo` row. Each section frame there holds
-the full-resolution background as a separate image fill under the mockup UI, so
-the plates are pulled clean with no text baked in. They are centre-cropped to
-16:9 and saved at 1600x900, matching what the plate quads sample.
+Source: the `Backgrounds 3.0` page, the row of frames named after the pools
+(`AI Strategy & Engineering`, `Data for AI` and so on), which supersedes the
+earlier `For Demo` row. Each frame holds the background as
+its own image node plus `Rectangle 4`, a left-hand scrim. Only the image node is
+exported: our own `.pool-bg` already darkens that side, and baking hers in would
+scrim it twice.
+
+Five of the six images are inset from the left edge of their frame by 250 to
+590px, with the frame's dark band showing behind the copy. Exporting the node
+therefore yields something narrower than 16:9. Rebuilding that band by mirroring
+the adjacent artwork left a visible seam on the strategy plate, where its
+diagonals met their own reflection, so the plates are simply centre-cropped to
+16:9 instead. The band is decoration the scrim already supplies, and cropping
+introduces no invented pixels.
 
 Art direction from the 25 Aug review: one blue tone throughout, soft 3D and
 slightly realistic, with the pools separated by subject rather than by hue. The
