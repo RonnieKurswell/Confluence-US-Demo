@@ -285,12 +285,16 @@ body.stats-open .hint {
 }
 
 /* Instruction under the open pool, in place of a Back button. Both gestures
-   are shown as well as named — a static line of text was being ignored. */
+   are shown as well as named — a static line of text was being ignored.
+
+   Right-aligned rather than centred on the viewport, so it sits under the board
+   and squares up with the copy column opposite. The inset is the same
+   expression as the panel's horizontal padding, so the left and right margins
+   stay equal at every width instead of only at one. */
 .pool-hint {
   position: fixed;
-  left: 50%;
+  right: clamp(28px, 3.4vw, 72px);
   bottom: clamp(26px, 4.6vh, 58px);
-  transform: translateX(-50%);
   z-index: 10;
   display: flex;
   align-items: center;
@@ -1563,8 +1567,12 @@ body.touch .hint { display: none; }
     width: clamp(140px, 42vw, 200px);
   }
 
+  /* No board to sit under in portrait, so it goes back to centred. The
+     transform lives here now that the base rule no longer sets one. */
   .pool-hint {
+    right: auto;
     left: 50%;
+    transform: translateX(-50%);
     bottom: auto;
     top: calc(34vh - 58px);
   }
