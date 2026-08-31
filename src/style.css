@@ -28,7 +28,9 @@
 :root {
   --bg: #04060e;
   --ink: #eaf3ff;
-  --ink-soft: #9db4d4;
+  /* Lifted from #9db4d4: the pool paragraph sat at 4.43:1 over the brightest
+     plate, just under the 4.5 body text needs. */
+  --ink-soft: #a8bcda;
   --accent: #35d0f5;
   --panel-w: min(46vw, 880px);
   --font-display: 'Geist', 'Inter Variable', Helvetica, Arial, sans-serif;
@@ -61,6 +63,13 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+body {
+  /* Declared on body, not :root, because main.js sets --accent as an inline
+     style on body — a :root declaration would resolve against the default
+     accent and never follow the pool. */
+  --accent-ink: color-mix(in srgb, var(--accent) 62%, #ffffff);
 }
 
 html,
@@ -306,6 +315,8 @@ body.stats-open .hint {
   gap: clamp(16px, 1.8vw, 30px);
   padding: 0.85em 1.5em;
   border-radius: 999px;
+  /* Measured at 6.5:1 against ink-soft over the brightest plate, so the glass
+     treatment stays as it was. */
   background: rgba(4, 7, 16, 0.55);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -514,7 +525,7 @@ body.stats-open .overview > *:nth-child(5) { transition-delay: 0.72s; }
   font-weight: 500;
   letter-spacing: var(--t-eyebrow-track);
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 /* display:inline-flex above would otherwise beat the [hidden] default, leaving
    an empty span that still draws its two rules. Same trap as .brand-logo. */
@@ -572,7 +583,7 @@ body.stats-open .overview > *:nth-child(5) { transition-delay: 0.72s; }
   font-size: clamp(9px, 0.62vw, 10.5px);
   font-weight: 500;
   letter-spacing: 0.3em;
-  color: var(--accent);
+  color: var(--accent-ink);
   opacity: 0.6;
 }
 .fact-body {
@@ -651,7 +662,11 @@ body.stats-open .overview > *:nth-child(5) { transition-delay: 0.72s; }
   gap: 12px;
   padding: 0.85em 1.5em;
   border-radius: 999px;
-  background: rgba(4, 7, 16, 0.55);
+  /* Parked over the brightest part of the overview plate, where the pill at
+     0.55 and accent-tinted type together measured 2.39:1. Darker glass and
+     plain ink: this is the one instruction on the screen, so it should read
+     first anyway. */
+  background: rgba(4, 7, 16, 0.86);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   font-family: var(--font-display);
@@ -659,7 +674,7 @@ body.stats-open .overview > *:nth-child(5) { transition-delay: 0.72s; }
   font-weight: 500;
   letter-spacing: var(--t-eyebrow-track);
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--ink);
   animation: breathe 3.4s ease-in-out infinite;
 }
 body.intro-open .prompt,
@@ -736,7 +751,7 @@ body.panel-open .prompt {
   font-weight: 700;
   letter-spacing: var(--t-eyebrow-track);
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .verb::before {
   content: "";
@@ -958,7 +973,7 @@ body.qr-open .panel-media {
   padding: 0.15em 0.5em;
   border-radius: 999px;
   background: color-mix(in srgb, var(--accent) 22%, transparent);
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .cases-arrow {
   font-size: 1.2em;
@@ -996,7 +1011,7 @@ body.cases-open .cases-layer {
   font-weight: 700;
   letter-spacing: var(--t-eyebrow-track);
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .cases-title {
   font-family: var(--font-display);
@@ -1048,7 +1063,7 @@ body.cases-open .case-card:nth-child(3) { transition-delay: 0.12s; }
   font-weight: 700;
   letter-spacing: var(--t-eyebrow-track);
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .case-card .headline {
   margin-top: 6px;
@@ -1188,7 +1203,7 @@ body.cases-open .case-card:nth-child(3) { transition-delay: 0.12s; }
 .cta-icon {
   font-size: 1.3em;
   line-height: 1;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 /* ---------- expanded video ----------
    Same overlay grammar as the QR: dim the room, put one thing on screen. */
@@ -1349,7 +1364,7 @@ body.case-mode .video-stage {
   border: 1.5px solid color-mix(in srgb, var(--accent) 60%, transparent);
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   box-shadow: 0 0 34px color-mix(in srgb, var(--accent) 30%, transparent);
-  color: var(--accent);
+  color: var(--accent-ink);
   font-size: clamp(15px, 1.2vw, 21px);
   padding-left: 4px;
 }
@@ -1391,7 +1406,7 @@ body.case-mode .video-caption {
   font-weight: 700;
   letter-spacing: var(--t-eyebrow-track);
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .video-title {
   font-size: var(--t-lead);
@@ -1429,7 +1444,7 @@ body.case-mode .case-body {
   font-weight: 700;
   letter-spacing: var(--t-eyebrow-track);
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .case-title {
   font-family: var(--font-display);
@@ -1853,9 +1868,10 @@ body.warp-open .autoplay {
   background:
     linear-gradient(
       100deg,
-      rgba(4, 6, 14, 0.82) 0%,
-      rgba(4, 6, 14, 0.58) 28%,
-      rgba(4, 6, 14, 0) 52%,
+      rgba(4, 6, 14, 0.88) 0%,
+      rgba(4, 6, 14, 0.72) 28%,
+      rgba(4, 6, 14, 0.34) 52%,
+      rgba(4, 6, 14, 0) 70%,
       rgba(4, 6, 14, 0) 100%
     ),
     radial-gradient(130% 95% at 66% 52%, rgba(4, 6, 14, 0) 0%, rgba(4, 6, 14, 0.18) 88%);

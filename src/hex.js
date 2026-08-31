@@ -102,6 +102,15 @@ function makeTextTexture(text, opts = {}) {
 
   const lineH = fontSize * lineFactor;
   const top = height / 2 - ((rows.length - 1) * lineH) / 2;
+
+  // Baked-in halo. The label is drawn onto a sector face tinted by the pool's
+  // accent, and on the lighter accents white type measured 2.73:1 against that
+  // face, under the 3.0 large text needs. A soft dark shadow in the texture
+  // itself fixes every pool at once and survives the board turning under it.
+  ctx.shadowColor = 'rgba(2, 6, 18, 0.92)';
+  ctx.shadowBlur = Math.max(6, fontSize * 0.34);
+  ctx.shadowOffsetY = Math.max(1, fontSize * 0.045);
+
   rows.forEach((row, i) => {
     if (tracking) {
       const totalW = ctx.measureText(row).width + tracking * (row.length - 1);
