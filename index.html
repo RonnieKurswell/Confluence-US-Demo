@@ -75,7 +75,13 @@
         </div>
       </div>
       <div class="panel-nav">
+        <button class="nav-arrow" id="poolPrev" type="button" aria-label="Previous value pool">
+          <span aria-hidden="true">&#8249;</span>
+        </button>
         <div class="dots" id="dots"></div>
+        <button class="nav-arrow" id="poolNext" type="button" aria-label="Next value pool">
+          <span aria-hidden="true">&#8250;</span>
+        </button>
       </div>
     </aside>
 
@@ -115,7 +121,7 @@
         </button>
         <div class="stage-media">
           <div class="video-frame" id="videoFrame">
-            <video id="lightboxVideo" playsinline loop muted></video>
+            <video id="lightboxVideo" playsinline loop muted controls controlsList="nodownload noplaybackrate"></video>
             <img id="lightboxImage" alt="" />
             <div class="video-empty" id="videoEmpty">
               <div class="media-icon">▶</div>

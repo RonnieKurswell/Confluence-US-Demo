@@ -763,6 +763,13 @@ function hideVideo() {
 
 dom.media.addEventListener('click', showVideo);
 
+// Swiping is not discoverable on a screen nobody has touched yet, so the dot
+// row gets an arrow either side. They run through cycle(), the same path as a
+// swipe and the arrow keys, so forward from the last pool still returns to the
+// framework rather than quietly looping.
+el('poolPrev').addEventListener('click', () => cycle(-1));
+el('poolNext').addEventListener('click', () => cycle(1));
+
 /* Case study gallery — the pool's studies, one step away from the panel. */
 const casesOpen = () => document.body.classList.contains('cases-open');
 
@@ -869,6 +876,13 @@ function replayPanelSwap(dir) {
   void inner.offsetWidth; // reflow, so the animation is genuinely restarted
   inner.style.setProperty('--swap-dir', String(dir));
   inner.classList.add('panel-swap');
+
+  // The film sits outside .panel-inner now, so it needs its own replay or it
+  // is the one thing on screen that does not move when you swipe.
+  dom.media.classList.remove('media-swap');
+  void dom.media.offsetWidth;
+  dom.media.style.setProperty('--swap-dir', String(dir));
+  dom.media.classList.add('media-swap');
 }
 
 // Shortest way round the ring, so stepping 6 -> 1 reads as forward, not back.

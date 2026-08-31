@@ -824,7 +824,11 @@ body.panel-open .prompt {
 .panel-media {
   position: fixed;
   right: clamp(28px, 3.4vw, 72px);
-  top: 50%;
+  /* Centred with auto margins rather than translateY(-50%), which would fight
+     the swap animation for the transform property. */
+  top: 0;
+  bottom: 0;
+  margin-block: auto;
   width: min(50vw, 1120px);
   aspect-ratio: 16 / 9;
   z-index: 18;
@@ -834,7 +838,7 @@ body.panel-open .prompt {
   /* Its own entrance now it no longer rides the panel's transition. */
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-50%) translateX(18px);
+  transform: translateX(28px);
   transition: opacity 0.45s ease,
     transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
   background:
@@ -850,7 +854,7 @@ body.panel-open .prompt {
 body.panel-open .panel-media {
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(-50%) translateX(0);
+  transform: none;
 }
 /* The overlays own the screen when they are up. */
 body.video-open .panel-media,
@@ -1097,11 +1101,44 @@ body.cases-open .case-card:nth-child(3) { transition-delay: 0.12s; }
   bottom: clamp(22px, 3vh, 40px);
   display: flex;
   align-items: center;
+  gap: clamp(12px, 1.2vw, 20px);
 }
 .dots {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+/* Swiping is invisible until someone tries it, so the dot row gets a control at
+   each end. Sized for a fingertip on a touchscreen, not for a mouse. */
+.nav-arrow {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid rgba(140, 195, 255, 0.24);
+  border-radius: 50%;
+  background: rgba(4, 7, 16, 0.5);
+  color: var(--ink-soft);
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease,
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.nav-arrow span {
+  /* The glyphs sit optically low in the circle at this size. */
+  transform: translateY(-1px);
+}
+.nav-arrow:hover {
+  background: rgba(10, 20, 42, 0.72);
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  color: var(--ink);
+}
+.nav-arrow:active {
+  transform: scale(0.92);
 }
 /* Ticks rather than dots — reads as a position marker, not a control cluster. */
 .dots i {
@@ -1183,6 +1220,58 @@ body.video-open .video-layer {
 }
 body.video-open .video-stage {
   transform: none;
+}
+
+/* ---------- film, full screen ----------
+   A boxed lightbox read as a preview of the film rather than the film. In video
+   mode the player takes the whole screen and carries native controls so the
+   scrubber, volume and fullscreen all come for free and behave the way people
+   already expect. Case mode is untouched: it still needs the still beside the
+   write-up, so every rule here is scoped away from it. */
+body.video-open:not(.case-mode) .video-layer {
+  padding: 0;
+  background: rgba(2, 4, 10, 0.99);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+body.video-open:not(.case-mode) .video-stage {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+}
+body.video-open:not(.case-mode) .stage-media {
+  width: 100%;
+  height: 100%;
+}
+body.video-open:not(.case-mode) .video-frame {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  aspect-ratio: auto;
+  border-radius: 0;
+  box-shadow: none;
+  background: #000;
+}
+/* contain, not cover: a 16:9 film on a taller screen must not be cropped. */
+body.video-open:not(.case-mode) .video-frame video {
+  object-fit: contain;
+}
+/* The caption rides over the film rather than pushing it up, and sits clear of
+   the native control bar along the bottom. */
+body.video-open:not(.case-mode) .video-caption {
+  position: absolute;
+  left: clamp(24px, 3vw, 56px);
+  bottom: clamp(84px, 11vh, 132px);
+  margin: 0;
+  padding: 0;
+  z-index: 2;
+  pointer-events: none;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.9);
+}
+/* Above the video so it stays hittable once controls are showing. */
+body.video-open:not(.case-mode) .video-close {
+  position: fixed;
+  z-index: 3;
 }
 /* Case mode puts the still beside the write-up; video mode stays full width. */
 body.case-mode .video-stage {
@@ -1540,11 +1629,16 @@ body.touch .hint { display: none; }
     right: auto;
     left: 50%;
     top: clamp(80px, 12vh, 150px);
+    bottom: auto;
+    margin-block: 0;
     width: min(92vw, 720px);
-    transform: translateX(-50%) translateY(12px);
+    /* Horizontal centring has to live in margin here too, so the swap
+       animation owns transform in portrait as well. */
+    translate: -50% 0;
+    transform: translateY(14px);
   }
   body.panel-open .panel-media {
-    transform: translateX(-50%) translateY(0);
+    transform: none;
   }
   /* Still one line each, just scaled to the sheet — so the bullets stay locked
      without reserving a second line that most titles never use. */
@@ -1816,11 +1910,24 @@ body.stats-open .pool-bg {
 @keyframes panelIn {
   from {
     opacity: 0;
-    transform: translate3d(calc(var(--swap-dir, 0) * 30px), 6px, 0);
+    transform: translate3d(calc(var(--swap-dir, 0) * 54px), 10px, 0);
   }
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
+  }
+}
+
+/* The film travels further than the copy and settles a beat later, so the two
+   read as one movement with depth rather than everything sliding in lockstep. */
+@keyframes filmIn {
+  from {
+    opacity: 0;
+    transform: translate3d(calc(var(--swap-dir, 0) * 110px), 0, 0) scale(0.955);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 /* Reading order, so the eye is led down the column rather than hit all at once. */
@@ -1836,9 +1943,7 @@ body.stats-open .pool-bg {
 .panel-swap > .bullets {
   animation-delay: 0ms;
 }
-.panel-swap > .panel-media {
-  animation-delay: 215ms;
-}
+
 .panel-swap > .panel-actions {
   animation-delay: 280ms;
 }
@@ -1860,9 +1965,13 @@ body.stats-open .pool-bg {
 }
 /* The poster gets a touch of scale on top, so the film slot feels like it lands
    rather than appears. */
-.panel-swap > .panel-media .media-poster {
-  animation: posterIn 620ms cubic-bezier(0.16, 0.84, 0.3, 1) both;
-  animation-delay: 215ms;
+.media-swap {
+  animation: filmIn 620ms cubic-bezier(0.16, 0.84, 0.3, 1) both;
+  animation-delay: 60ms;
+}
+.media-swap .media-poster {
+  animation: posterIn 760ms cubic-bezier(0.16, 0.84, 0.3, 1) both;
+  animation-delay: 60ms;
 }
 @keyframes posterIn {
   from {
@@ -1875,7 +1984,8 @@ body.stats-open .pool-bg {
 @media (prefers-reduced-motion: reduce) {
   .panel-swap > *,
   .panel-swap .bullets li,
-  .panel-swap > .panel-media .media-poster {
+  .media-swap,
+  .media-swap .media-poster {
     animation: none;
   }
 }

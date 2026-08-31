@@ -300,6 +300,18 @@ They carry a visible badge saying so. See
 
 ## The pool screen
 
+Swiping is invisible until someone tries it, so the dot row has an arrow at each
+end. They call the same `cycle()` as a swipe and the arrow keys, which means
+going forward from the last pool still returns you to the framework rather than
+looping — one behaviour, three ways to reach it.
+
+The film plays **full screen with native controls**, not in a box. A boxed
+lightbox read as a preview of the film rather than the film itself, and native
+controls mean the scrubber, volume and fullscreen all behave the way people
+already expect. Every rule for it is scoped `:not(.case-mode)`, because the case
+study viewer shares the same layer and still needs its still beside the write-up.
+
+
 The film is the screen. Nitin's steer on 28 Aug was that the videos are the
 attraction and the text should get out of their way, so the film left the copy
 column and took the right of the viewport at roughly five times its old area.
