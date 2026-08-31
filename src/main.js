@@ -763,6 +763,15 @@ function hideVideo() {
 
 dom.media.addEventListener('click', showVideo);
 
+// filmIn fills 'both', so its last keyframe pins opacity to 1 and outranks
+// `body.panel-open .panel-media`. Left on, the film stayed on screen after the
+// panel closed — visible when swiping forward off the last pool returned to the
+// board with the film still sitting over it. Clearing the class once the
+// animation has played hands the element back to the stylesheet.
+dom.media.addEventListener('animationend', (e) => {
+  if (e.target === dom.media) dom.media.classList.remove('media-swap');
+});
+
 // Swiping is not discoverable on a screen nobody has touched yet, so the dot
 // row gets an arrow either side. They run through cycle(), the same path as a
 // swipe and the arrow keys, so forward from the last pool still returns to the
@@ -938,6 +947,7 @@ function deselect() {
   hideCases();
   state.selected = -1;
   document.body.classList.remove('panel-open');
+  dom.media.classList.remove('media-swap');
   dom.overview.classList.remove('hidden');
   dom.panel.classList.remove('open');
   dom.panel.setAttribute('aria-hidden', 'true');
