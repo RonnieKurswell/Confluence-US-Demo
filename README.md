@@ -166,8 +166,8 @@ only once a visitor has opened a value pool and read something.
 The board eases between pools over about half a second. The copy used to be
 replaced in a single frame, so the words and the thumbnail snapped while the
 object glided, which read as mechanical. Each block now enters on a short
-stagger — verb, title, description, the three bullets one after another, then the
-film slot and the actions — and it enters **from the direction of travel**, so
+stagger — verb, title, description, then the actions — and it enters **from the
+direction of travel**, so
 swiping forward and swiping back feel different. The poster gets a little scale
 on top so the film slot lands rather than appears.
 
@@ -298,11 +298,32 @@ thumbnails standing in for the 403 client-masked studies Infosys is tagging.
 They carry a visible badge saying so. See
 [public/media/README.md](public/media/README.md).
 
-## Type
+## The pool screen
 
-Bullets are marked with a small pointy-top hexagon in the pool's accent, cut to
-the same proportion as the board's own sectors, so the list reads as part of the
-framework rather than a generic bulleted list.
+The film is the screen. Nitin's steer on 28 Aug was that the videos are the
+attraction and the text should get out of their way, so the film left the copy
+column and took the right of the viewport at roughly five times its old area.
+Tapping it opens the same full-screen lightbox as before.
+
+Two consequences worth knowing:
+
+**The board hides while a pool is open.** One line in the frame loop
+(`wantBoard`). Everything downstream already multiplied by `boardIn`, so the
+sectors, labels, core and ring follow from it. The cost is that swiping between
+pools no longer shows the hexagon turning — that rotation now only exists on the
+overview. Putting it back is deleting the last clause of that line, and the roll
+solve in `applyTargets()` is deliberately kept correct so it still works.
+
+**The background plates no longer ride `boardIn`.** They belong to the pool as
+much as to the board, so they run off their own `sceneIn` ramp. Tying them to the
+board was the first thing that broke when it started hiding.
+
+The three bullets came off with it; their substance is folded into the
+description, which is now a short paragraph. `bullets` is still in
+[src/data.js](src/data.js), unrendered, because it is what those paragraphs were
+written from.
+
+## Type
 
 Geist for display — headlines, pool titles and every control — and Inter for
 body copy, mirroring the split on the Infosys site. Titles are **Geist Medium
@@ -316,10 +337,14 @@ system face if the webfont has not arrived yet, and the texture only bakes once.
 
 ## Changing the words
 
-All copy — pool titles, verbs, hooks, bullets, the headline facts — lives in
+All copy — pool titles, verbs, hooks, the headline facts — lives in
 [src/data.js](src/data.js). Nothing else needs touching to re-cut the messaging.
-Keep bullets to roughly five words; the panel is designed to be glanced at, not
-read.
+
+Keep each pool description to **five lines at kiosk width**, which is roughly 300
+characters. `.hook` reserves six, so one pool running long simply eats the spare
+line; two would start pushing the buttons below it down on that pool alone, and
+the row is meant to hold still as visitors swipe. There is no CSS clamp enforcing
+this, only the reserve — so it is worth re-checking after any copy change.
 
 Each pool also names its centre visual via `viz`. The six procedural scenes
 (`orbit`, `lattice`, `flow`, `rebuild`, `pulse`, `shield`) are in

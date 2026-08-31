@@ -334,6 +334,8 @@ function layout() {
 
   // Fraction of the viewport the detail panel covers.
   // Keep in step with --panel-w in style.css.
+  // Dormant: its only reader is the open-pool branch of applyTargets, which no
+  // longer moves anything visible now the board hides behind an open pool.
   const panelPx = state.isPortrait ? 0 : Math.min(w * 0.46, 880);
   state.panelFraction = panelPx / w;
 
@@ -388,6 +390,11 @@ function applyTargets() {
     return;
   }
 
+  // DORMANT while the board is hidden on an open pool (see wantBoard in the
+  // frame loop). Kept, and kept correct, because it is the whole roll solve:
+  // restoring the board is one line there, and this has to still be right when
+  // that happens. target.labelFlip and current.roll are still read every frame.
+  //
   // Opening a pool pushes that sector to the middle and zooms into it. Solving
   // for position rather than animating a child keeps one transform authoritative.
   const theta = pools[state.selected].theta;
@@ -453,7 +460,6 @@ const dom = {
   verb: el('panelVerb'),
   title: el('panelTitle'),
   hook: el('panelHook'),
-  bullets: el('panelBullets'),
   media: el('panelMedia'),
   dots: el('dots'),
   lockup: el('lockup'),
@@ -892,7 +898,6 @@ function select(i) {
   dom.verb.textContent = pool.verb;
   dom.title.textContent = pool.title;
   dom.hook.textContent = pool.description;
-  dom.bullets.innerHTML = pool.bullets.map((b) => `<li>${b}</li>`).join('');
   [...dom.dots.children].forEach((d, k) => d.classList.toggle('on', k === i));
 
   buildMedia(pool);
@@ -1159,6 +1164,9 @@ const damp = (a, b, lambda, dt) => a + (b - a) * (1 - Math.exp(-lambda * dt));
 const clock = new THREE.Clock();
 const projected = new THREE.Vector3();
 let boardIn = 0; // 0 while the intro or stats page is up, 1 on the board
+// Same ramp minus the open-pool clause. The background plates belong to the
+// pool as much as to the board, so they cannot ride boardIn any more.
+let sceneIn = 0;
 const promptAt = { x: -1, y: -1 };
 
 function tick() {
@@ -1200,7 +1208,7 @@ function tick() {
 
   // Cross-fade the background plates. The intro and the warp stay on the plain
   // ground; everything else rides whichever stage is coming up.
-  const plateVis = introOpen() || warpOpen() ? 0 : statsOpen() ? statsIn : boardIn;
+  const plateVis = introOpen() || warpOpen() ? 0 : statsOpen() ? statsIn : sceneIn;
   platePair.forEach((mesh, k) => {
     const want = plateState.target[k] * plateVis;
     mesh.material.opacity = damp(mesh.material.opacity, want, 2.6, dt);
@@ -1259,8 +1267,13 @@ function tick() {
   // The warp has to hold the board back too. Without it the board fades in
   // behind the wormhole overlay and is briefly visible as that overlay clears,
   // which reads as the shape flashing and vanishing at the end of the video.
-  const wantBoard = introOpen() || statsOpen() || warpOpen() ? 0 : 1;
+  // A pool now hands the whole right side to its film, so the board clears out
+  // with it. Everything downstream already multiplies by boardIn, so the
+  // sectors, labels, rims, core, title and ring all follow from this one line.
+  // Putting the board back is deleting the last clause.
+  const wantBoard = introOpen() || statsOpen() || warpOpen() || state.selected >= 0 ? 0 : 1;
   boardIn = damp(boardIn, wantBoard, 6, dt);
+  sceneIn = damp(sceneIn, introOpen() || statsOpen() || warpOpen() ? 0 : 1, 6, dt);
   world.visible = boardIn > 0.01;
 
   // The constellation trades places with it.
@@ -1343,6 +1356,19 @@ requestAnimationFrame(tick);
   if (screen === 'qr') showQr();
 
   Object.assign(current, target);
+  // Deep links are meant to arrive already on their screen, so the fades that
+  // normally carry you there have to be skipped rather than played. Without
+  // this the board and the background plate spend their first second ramping
+  // up from nothing, which the autoplay walk and any screenshot both catch.
+  boardIn = introOpen() || statsOpen() || warpOpen() || state.selected >= 0 ? 0 : 1;
+  sceneIn = introOpen() || statsOpen() || warpOpen() ? 0 : 1;
+  statsIn = statsOpen() ? 1 : 0;
+  resolvePlate();
+  const plateNow = introOpen() || warpOpen() ? 0 : statsOpen() ? statsIn : sceneIn;
+  platePair.forEach((mesh, k) => {
+    mesh.material.opacity = plateState.target[k] * plateNow;
+    mesh.visible = mesh.material.opacity > 0.004;
+  });
   pools.forEach((p) => {
     p.lift = p.targetLift;
     p.glow = p.targetGlow;

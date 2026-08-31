@@ -62,8 +62,6 @@
         <div class="verb" id="panelVerb"></div>
         <h1 class="title" id="panelTitle"></h1>
         <p class="hook" id="panelHook"></p>
-        <ul class="bullets" id="panelBullets"></ul>
-        <div class="panel-media" id="panelMedia"></div>
         <div class="panel-actions">
           <button class="cases-cta" id="casesCta">
             <span class="cases-count" id="casesCount"></span>
@@ -80,6 +78,10 @@
         <div class="dots" id="dots"></div>
       </div>
     </aside>
+
+    <!-- The film. Outside .panel on purpose: .panel is transformed, so a
+         fixed-position child of it would anchor to the panel, not the screen. -->
+    <div class="panel-media" id="panelMedia"></div>
 
     <div class="pool-hint" id="poolHint">
       <span class="hint-item">

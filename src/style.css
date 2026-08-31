@@ -746,8 +746,9 @@ body.panel-open .prompt {
   box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 80%, transparent);
 }
 
-/* Title and hook are height-locked so the bullet list below them starts at the
-   same Y for every pool — nothing jumps as visitors cycle through. */
+/* Title and hook are height-locked so the two calls to action below them start
+   at the same Y for every pool — nothing jumps as visitors cycle through. The
+   bullets used to be the thing being protected; now it is the CTA row. */
 .title {
   font-family: var(--font-display);
   margin-top: clamp(14px, 1.9vh, 24px);
@@ -765,9 +766,13 @@ body.panel-open .prompt {
   font-size: clamp(15px, 1.18vw, 21px);
   line-height: 1.5;
   color: var(--ink-soft);
-  max-width: 46ch;
-  /* Two lines for every pool, so what follows never shifts. */
-  min-height: calc(2em * 1.5);
+  max-width: 52ch;
+  /* Six lines reserved, against paragraphs written to land on five at kiosk
+     width. The spare line is headroom: a narrower screen rewraps one of them
+     onto a sixth line, and without the slack the CTA row below would drop by
+     that line's height on that pool alone. Anything shorter just leaves the
+     space empty rather than dragging the buttons up. */
+  min-height: calc(6em * 1.5);
 }
 
 .bullets {
@@ -812,16 +817,26 @@ body.panel-open .prompt {
   gap: clamp(10px, 1.1vw, 16px);
 }
 
+/* The film is the point of this screen now, so it owns the right of the
+   viewport rather than sitting as a thumbnail in the copy column. It is fixed
+   to the viewport and lives outside .panel in the markup, because .panel is
+   transformed and would otherwise become its containing block. */
 .panel-media {
-  position: relative;
-  max-width: clamp(224px, 24vw, 392px);
-  margin-top: clamp(20px, 2.8vh, 34px);
-  width: 100%;
-  max-width: clamp(224px, 24vw, 392px);
+  position: fixed;
+  right: clamp(28px, 3.4vw, 72px);
+  top: 50%;
+  width: min(50vw, 1120px);
   aspect-ratio: 16 / 9;
-  border-radius: 10px;
+  z-index: 18;
+  border-radius: 14px;
   overflow: hidden;
   cursor: pointer;
+  /* Its own entrance now it no longer rides the panel's transition. */
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) translateX(18px);
+  transition: opacity 0.45s ease,
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
   background:
     radial-gradient(
       110% 120% at 50% 40%,
@@ -830,11 +845,19 @@ body.panel-open .prompt {
     ),
     linear-gradient(158deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.014) 58%);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07),
-    0 22px 48px rgba(0, 0, 0, 0.5);
-  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    0 34px 80px rgba(0, 0, 0, 0.58);
 }
-.panel-media:hover {
-  transform: translateY(-3px);
+body.panel-open .panel-media {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%) translateX(0);
+}
+/* The overlays own the screen when they are up. */
+body.video-open .panel-media,
+body.cases-open .panel-media,
+body.qr-open .panel-media {
+  opacity: 0;
+  pointer-events: none;
 }
 .panel-media video {
   position: absolute;
@@ -1509,8 +1532,20 @@ body.touch .hint { display: none; }
     padding: 20px 0 max(18px, env(safe-area-inset-bottom));
     background: linear-gradient(180deg, rgba(4, 7, 16, 0) 0%, rgba(4, 7, 16, 0.94) 45%);
   }
-  .media { aspect-ratio: 16 / 9; margin-top: clamp(16px, 2vh, 24px); }
-  .bullets { margin-top: clamp(14px, 2vh, 22px); }
+  /* Portrait puts the panel in a bottom sheet, so the film takes the space
+     above it rather than the right of the screen. This rule used to target
+     `.media`, which matches nothing in the markup, so portrait sizing was
+     silently never applied. */
+  .panel-media {
+    right: auto;
+    left: 50%;
+    top: clamp(80px, 12vh, 150px);
+    width: min(92vw, 720px);
+    transform: translateX(-50%) translateY(12px);
+  }
+  body.panel-open .panel-media {
+    transform: translateX(-50%) translateY(0);
+  }
   /* Still one line each, just scaled to the sheet — so the bullets stay locked
      without reserving a second line that most titles never use. */
   .title {

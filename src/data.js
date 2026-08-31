@@ -58,7 +58,10 @@ export const POOLS = [
     verb: 'INSIGHT',
     title: 'Data for AI',
     description:
-      'Raw enterprise data becomes a trusted, model-ready asset, so analytics and prediction run on one version of the truth.',
+      'Raw enterprise data becomes a trusted, model-ready asset, so analytics and prediction run on one version of the truth. We build the platforms that get it there, and use fingerprinting and synthetic data to fill the gaps privacy leaves behind. What comes out the other side is decisions made in real time, not reports written after the fact.',
+    // No longer rendered: the panel now carries a paragraph instead of a list,
+    // per Nitin on 28 Aug. Kept because they are the source that paragraph was
+    // written from, and because they still describe the pool accurately.
     bullets: [
       'AI-ready data platforms',
       'Fingerprinting & synthetic data',
@@ -101,7 +104,7 @@ export const POOLS = [
     verb: 'ORCHESTRATE',
     title: 'AI Strategy & Engineering',
     description:
-      'One enterprise-wide AI operating model rather than a hundred disconnected pilots, on infrastructure built for it.',
+      'One enterprise-wide AI operating model, rather than a hundred pilots that never leave their business unit. Agents, platforms and third-party tools run as one estate on infrastructure built for the workload. The architecture follows how the business works, not the tools that arrived first.',
     bullets: [
       'Agents, platforms & tools in concert',
       'Purpose-built AI infrastructure',
@@ -144,7 +147,7 @@ export const POOLS = [
     verb: 'ASSURE',
     title: 'AI Trust',
     description:
-      'Responsible, secure and governed AI across the whole lifecycle, so it can scale without outrunning its guardrails.',
+      'Responsible, secure and governed AI across the whole lifecycle, so it can scale without outrunning its guardrails. Risk assessment and policy design come first, and agents are security tested like any other system that reaches production. Governance is built to satisfy the regulator rather than the slide.',
     bullets: [
       'Risk assessment & policy design',
       'Security testing for agents',
@@ -187,7 +190,7 @@ export const POOLS = [
     verb: 'INNOVATE',
     title: 'Physical AI',
     description:
-      'Intelligence embedded in products and operations, reading sensor signal and acting on it in real time.',
+      'Intelligence embedded in products and operations, reading sensor signal and acting on it in real time. Digital twins, robotics and autonomy turn that signal into physical action on the floor and in the field. Enough of the model runs at the edge that the product keeps working when the network does not.',
     bullets: [
       'Sensor signal to real-world action',
       'Digital twins, robotics, autonomy',
@@ -230,7 +233,7 @@ export const POOLS = [
     verb: 'MODERNIZE',
     title: 'Agentic Legacy Modernization',
     description:
-      'Agents read the legacy estate, recover what it was built to do, and modernise it without a big-bang rewrite.',
+      'Agents read the legacy estate and recover what it was built to do, including the rules nobody wrote down and the people who knew them have left. Modernisation then happens progressively instead of as a big-bang rewrite. Technical debt comes down while the systems that run the business stay up.',
     bullets: [
       'Reverse-engineer legacy systems',
       'Progressive, zero-disruption change',
@@ -273,7 +276,7 @@ export const POOLS = [
     verb: 'TRANSFORM',
     title: 'Process AI',
     description:
-      'End-to-end workflows redesigned around domain-aware agents working alongside the people who own the outcome.',
+      'End-to-end workflows redesigned around domain-aware agents that understand the work, not just the words. They run alongside the people who own the outcome, who stay in the loop where judgement is needed. That combination is what turns incremental savings into a step change in both efficiency and experience.',
     bullets: [
       'Domain-aware agents',
       'Human expertise in the loop',
