@@ -328,7 +328,6 @@ body.stats-open .hint {
 body.panel-open .pool-hint {
   opacity: 1;
 }
-body.qr-open .pool-hint,
 body.video-open .pool-hint,
 body.cases-open .pool-hint {
   opacity: 0;
@@ -873,8 +872,7 @@ body.panel-open .panel-media {
 }
 /* The overlays own the screen when they are up. */
 body.video-open .panel-media,
-body.cases-open .panel-media,
-body.qr-open .panel-media {
+body.cases-open .panel-media {
   opacity: 0;
   pointer-events: none;
 }
@@ -1170,43 +1168,8 @@ body.cases-open .case-card:nth-child(3) { transition-delay: 0.12s; }
   box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 75%, transparent);
 }
 
-/* ---------- guidebook CTA + QR takeaway ----------
-   Lives at the end of the pool panel's content, so the ask arrives after the
-   visitor has actually read something — not on the framework overview. */
-.guidebook-cta {
-  font-family: var(--font-display);
-  margin-top: clamp(20px, 2.8vh, 34px);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.85em;
-  padding: 1.05em 1.7em;
-  border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 12%, rgba(4, 7, 16, 0.6));
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  color: var(--ink);
-  font-family: var(--font-display);
-  font-size: var(--t-eyebrow);
-  font-weight: 700;
-  letter-spacing: var(--t-eyebrow-track);
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease,
-    opacity 0.4s ease;
-}
-.guidebook-cta:hover {
-  background: color-mix(in srgb, var(--accent) 26%, rgba(4, 7, 16, 0.6));
-  border-color: var(--accent);
-  transform: translateY(-2px);
-}
-.cta-icon {
-  font-size: 1.3em;
-  line-height: 1;
-  color: var(--accent-ink);
-}
 /* ---------- expanded video ----------
-   Same overlay grammar as the QR: dim the room, put one thing on screen. */
+   Dim the room, put one thing on screen. */
 .video-layer {
   position: fixed;
   inset: 0;
@@ -1504,100 +1467,6 @@ body.case-mode .case-body {
   right: clamp(24px, 3vw, 50px);
 }
 
-/* Leon sees them out. This is the last screen anyone looks at, and "take it
-   with you" is a hand-off, so he stands at the left with his palm open toward
-   the centre — where the QR card actually sits. The plate is dark and the
-   right two thirds are deliberately empty, so the card and its copy keep the
-   contrast they measured at. */
-.qr-layer {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: grid;
-  place-items: center;
-  background:
-    linear-gradient(
-      90deg,
-      rgba(2, 4, 10, 0.1) 0%,
-      rgba(2, 4, 10, 0.26) 24%,
-      rgba(2, 4, 10, 0.88) 42%,
-      rgba(2, 4, 10, 0.95) 100%
-    ),
-    url('/media/backgrounds/qr-leon.jpg') center / cover no-repeat,
-    rgba(2, 4, 10, 0.98);
-  backdrop-filter: blur(26px) saturate(0.85);
-  -webkit-backdrop-filter: blur(26px) saturate(0.85);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.4s ease;
-}
-body.qr-open .qr-layer {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.qr-card {
-  position: relative;
-  width: min(90vw, 560px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: clamp(34px, 4.4vh, 60px) clamp(30px, 3.4vw, 66px);
-  transform: translateY(18px) scale(0.97);
-  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-}
-body.qr-open .qr-card {
-  transform: none;
-}
-/* Pinned to the screen, not the card — reads as "leave this overlay". */
-.qr-close {
-  position: fixed;
-  top: clamp(20px, 3vh, 42px);
-  right: clamp(24px, 3vw, 50px);
-}
-
-/* White quiet zone — scanners need the contrast, so this one stays a card. */
-.qr-code {
-  width: clamp(190px, 17vw, 270px);
-  height: clamp(190px, 17vw, 270px);
-  padding: clamp(12px, 1.2vw, 18px);
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55),
-    0 0 60px color-mix(in srgb, var(--accent) 28%, transparent);
-}
-.qr-code svg,
-.qr-code canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.qr-title {
-  font-family: var(--font-display);
-  margin-top: clamp(22px, 3vh, 36px);
-  font-size: var(--t-title);
-  font-weight: 500;
-  line-height: var(--t-title-lh);
-  letter-spacing: -0.015em;
-}
-.qr-sub {
-  margin-top: clamp(10px, 1.4vh, 16px);
-  font-size: var(--t-lead);
-  line-height: var(--t-lead-lh);
-  color: var(--ink-soft);
-  max-width: 34ch;
-}
-.qr-foot {
-  margin-top: clamp(14px, 2vh, 22px);
-  font-size: var(--t-caption);
-  letter-spacing: var(--t-caption-track);
-  text-transform: uppercase;
-  color: var(--ink-soft);
-  opacity: 0.55;
-}
-
 /* ---------- keyboard hint ---------- */
 .hint {
   position: fixed;
@@ -1740,14 +1609,6 @@ body.touch .hint { display: none; }
     top: calc(34vh - 58px);
   }
 
-  /* Full-width in the sheet, where taps are thumb-driven. */
-  .guidebook-cta {
-    display: flex;
-    width: 100%;
-    justify-content: center;
-    padding: 1.15em 1.4em;
-  }
-
   /* Intro: copy centres and the video crops tighter on a tall screen. */
   .intro-content {
     padding: 0 clamp(24px, 8vw, 60px);
@@ -1784,7 +1645,7 @@ body.touch .hint { display: none; }
   position: fixed;
   top: clamp(20px, 3.4vh, 44px);
   right: clamp(24px, 3vw, 56px);
-  /* Alongside the lockup: over the panel and the case / QR layers, under the
+  /* Alongside the lockup: over the panel and the case layer, under the
      warp so the jump covers the whole screen. */
   z-index: 110;
   display: grid;

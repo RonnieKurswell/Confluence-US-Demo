@@ -37,19 +37,6 @@ export const BRAND = {
   // Infosys is tagging. Flip to false once real ones are wired in — it drives
   // the "placeholder" badge in the UI so nothing reads as a real client claim.
   casesArePlaceholder: true,
-
-  guidebook: {
-    cta: 'Download the guidebook',
-    title: 'Take it with you',
-    sub: 'Scan to get the AI-First Value Framework guidebook sent to your inbox.',
-    // ---------------------------------------------------------------------
-    // TODO: replace with the real Infosys lead-capture landing page. This is
-    // the ONLY line that needs changing — the QR re-encodes automatically.
-    // ---------------------------------------------------------------------
-    url: 'https://www.infosys.com/navigate-your-next/unlock-ai-value.html',
-    isPlaceholder: true,
-    footnote: 'Or visit infosys.com/unlock-ai-value',
-  },
 };
 
 export const POOLS = [

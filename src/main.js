@@ -1,7 +1,6 @@
 import '@fontsource-variable/inter';
 
 import * as THREE from 'three';
-import QRCode from 'qrcode';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -610,7 +609,6 @@ function returnToIntro() {
   seen.clear();
   document.body.classList.remove('stats-open');
   endWarp();
-  hideQr();
   hideVideo();
   hideCases();
   deselect();
@@ -825,52 +823,6 @@ el('videoLayer').addEventListener('click', (e) => {
 });
 
 /* ------------------------------------------------------------------ *
- * Guidebook takeaway
- *
- * The QR is rendered locally rather than fetched, so it still works on a
- * booth machine with no network. The destination is the only thing that
- * needs maintaining — see BRAND.guidebook.url in data.js.
- * ------------------------------------------------------------------ */
-const GUIDE = BRAND.guidebook;
-el('ctaLabel').textContent = GUIDE.cta;
-el('qrTitle').textContent = GUIDE.title;
-el('qrSub').textContent = GUIDE.sub;
-el('qrFoot').textContent = GUIDE.footnote;
-
-QRCode.toString(GUIDE.url, {
-  type: 'svg',
-  errorCorrectionLevel: 'M',
-  margin: 0,
-  color: { dark: '#04060e', light: '#ffffff' },
-})
-  .then((svg) => {
-    el('qrCode').innerHTML = svg;
-  })
-  .catch(() => {
-    // Never leave a blank white square on a booth screen.
-    el('qrCode').textContent = GUIDE.url;
-  });
-
-const qrOpen = () => document.body.classList.contains('qr-open');
-const showQr = () => {
-  document.body.classList.add('qr-open');
-  el('qrLayer').setAttribute('aria-hidden', 'false');
-  state.lastInput = performance.now();
-};
-const hideQr = () => {
-  document.body.classList.remove('qr-open');
-  el('qrLayer').setAttribute('aria-hidden', 'true');
-  state.lastInput = performance.now();
-};
-
-el('guidebookCta').addEventListener('click', showQr);
-el('qrClose').addEventListener('click', hideQr);
-// Tapping the backdrop dismisses; tapping the card itself does not.
-el('qrLayer').addEventListener('click', (e) => {
-  if (e.target === el('qrLayer')) hideQr();
-});
-
-/* ------------------------------------------------------------------ *
  * Selection
  * ------------------------------------------------------------------ */
 /* Replays the panel's staggered entrance.
@@ -915,7 +867,7 @@ function select(i) {
   dom.overview.classList.add('hidden');
   dom.panel.classList.add('open');
   dom.panel.setAttribute('aria-hidden', 'false');
-  // On the body, not the panel, so the CTA and QR pick up the pool's accent too.
+  // On the body, not the panel, so the case studies pick up the pool's accent too.
   document.body.style.setProperty('--accent', '#' + pool.accent.toString(16).padStart(6, '0'));
 
   dom.verb.textContent = pool.verb;
@@ -1086,7 +1038,6 @@ async function startTour() {
     });
 
   while (alive()) {
-    hideQr();
     hideVideo();
     hideCases();
     if (!introOpen()) {
@@ -1146,10 +1097,6 @@ addEventListener('keydown', (e) => {
   }
   if (introOpen()) {
     if (e.key === 'Enter' || e.key === ' ') enterExperience();
-    return;
-  }
-  if (qrOpen()) {
-    if (e.key === 'Escape') hideQr();
     return;
   }
   if (videoOpen()) {
@@ -1360,7 +1307,7 @@ coreTitle.material.opacity = 1;
 requestAnimationFrame(tick);
 
 /* Deep link straight to a state — for review links and for capturing stills:
- *   ?screen=overview | pool | video | case | qr   &pool=0-5  &case=0-2
+ *   ?screen=overview | pool | video | case   &pool=0-5  &case=0-2
  * Transforms are snapped so a capture is never mid-animation. */
 (() => {
   const q = new URLSearchParams(location.search);
@@ -1377,7 +1324,6 @@ requestAnimationFrame(tick);
   if (screen !== 'overview') select(clamp(q.get('pool'), POOLS.length - 1));
   if (screen === 'video') showVideo();
   if (screen === 'case') showCase(clamp(q.get('case'), 2));
-  if (screen === 'qr') showQr();
 
   Object.assign(current, target);
   // Deep links are meant to arrive already on their screen, so the fades that
