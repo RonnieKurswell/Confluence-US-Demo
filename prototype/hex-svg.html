@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hexagon — SVG test</title>
+<style>
+  /* Geist, bundled rather than linked: the kiosk runs offline, so a Google
+     Fonts URL would silently fall back to a system face on the day. */
+  @font-face {
+    font-family: 'Geist Variable';
+    src: url('assets/geist.woff2') format('woff2-variations');
+    font-weight: 100 900;
+    font-display: block;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%;
+    background: #ffffff;
+    font-family: 'Geist Variable', 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: #12294d;
+  }
+  body { display: grid; grid-template-rows: auto 1fr auto; }
+
+  header {
+    padding: 16px 28px;
+    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    border-bottom: 1px solid #e6ecf5;
+  }
+  header h1 { margin: 0; font-size: 15px; font-weight: 600; }
+  header p { margin: 0; font-size: 13px; color: #6b7f9e; }
+
+  main { display: grid; place-items: center; padding: 16px; min-height: 0; }
+  .stage { width: min(78vh, 88vw); aspect-ratio: 1; }
+  svg.hex { width: 100%; height: 100%; display: block; overflow: visible; }
+
+  /* One group per piece. The artwork, the labels and the hit shape all sit
+     inside it, so a single transform moves the lot. */
+  .piece { cursor: pointer; }
+  .piece > g.body {
+    transition: transform 460ms cubic-bezier(.22,1,.36,1), opacity 380ms ease;
+    /* The transform attribute and the CSS transform property are the same
+       thing in modern browsers, so CSS's default 50%-of-the-box origin would
+       silently move every piece. Pin it to the viewBox origin. */
+    transform-box: view-box;
+    transform-origin: 0 0;
+  }
+  .piece .art { transition: filter 380ms ease; }
+
+  /* The hit shape is the traced path, invisible but clickable. This is the
+     whole reason for using SVG rather than six PNGs in divs: the tap lands on
+     the real geometry, not on a rectangle. */
+  .hit { fill: transparent; }
+
+  .label { fill: #ffffff; text-anchor: middle; pointer-events: none;
+           font-weight: 800; letter-spacing: 0.01em; }
+  .verb  { fill: #cfe0f7; text-anchor: middle; pointer-events: none;
+           font-weight: 700; letter-spacing: 0.13em; }
+
+  .piece:hover .art { filter: brightness(1.09); }
+  .piece:hover > g.body { filter: drop-shadow(0 4px 16px rgba(18,41,77,.32)); }
+
+  body.has-selection .piece:not(.is-selected) > g.body { opacity: .3; }
+  .piece.is-selected .art { filter: brightness(1.13); }
+  .piece.is-selected > g.body { filter: drop-shadow(0 8px 30px rgba(18,41,77,.45)); }
+
+  .centre { fill: #12294d; text-anchor: middle; pointer-events: none;
+            font-weight: 500; transition: opacity 300ms ease; }
+  body.has-selection .centre { opacity: .22; }
+
+  footer {
+    padding: 12px 28px 18px; border-top: 1px solid #e6ecf5;
+    display: flex; gap: 22px; align-items: center; flex-wrap: wrap;
+    font-size: 13px; color: #4a6288;
+  }
+  .readout { font-weight: 600; color: #12294d; min-width: 26ch; }
+  .toggles { display: flex; gap: 16px; margin-left: auto; }
+  label.t { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+  .hint { color: #8496b3; }
+  body.show-hits .hit { fill: rgba(255,45,85,.22); stroke: #ff2d55; stroke-width: 26; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Hexagon — SVG test</h1>
+  <p>One traced path, one rendered piece, six instances at 60&deg;. Click a piece.</p>
+</header>
+
+<main>
+  <div class="stage">
+    <svg class="hex" id="hex" viewBox="0 0 1000 1000" aria-label="AI-First Value Framework">
+      <defs>
+        <!-- The piece export carries a white background rather than alpha, so
+             the artwork has to be clipped back to the traced outline. -->
+        <clipPath id="pieceClip"><use href="#hexpiece"/></clipPath>
+        <path id="hexpiece" d="M0 2695.64V1465.9C0 1448.03 9.53903 1431.52 25.0208 1422.59L2480.02 6.76128C2513.35 -12.4625 2555 11.5952 2555 50.0746V4111.95C2555 4150.43 2513.35 4174.49 2480.01 4155.26L25.0144 2738.95C9.53621 2730.02 0 2713.51 0 2695.64Z"/>
+      </defs>
+      <g id="pieces"></g>
+      <text class="centre" x="500" y="492" font-size="40">UNLOCK</text>
+      <text class="centre" x="500" y="534" font-size="40">AI VALUE</text>
+    </svg>
+  </div>
+</main>
+
+<footer>
+  <span class="readout" id="readout">Nothing selected</span>
+  <span class="hint">Tap a piece. Tap again to deselect. Arrow keys cycle.</span>
+  <div class="toggles">
+    <label class="t"><input type="checkbox" id="showHits"> Show hit areas</label>
+    <label class="t"><input type="checkbox" id="showLabels" checked> Labels</label>
+  </div>
+</footer>
+
+<script>
+/* Geometry ------------------------------------------------------------------
+ * The traced path is 2555 wide, spans y 6.76 to 4155.26 and is symmetric about
+ * y = 2081. Its short edge (x = 0) faces the centre, its long edge (x = 2555)
+ * is the outer rim, so one piece rotated six times rebuilds the hexagon.
+ *
+ * SCALE and GAP were fitted rather than solved: the artwork has rounded
+ * corners and a deliberate gap between pieces, so a clean hexagon solve lands
+ * a few units out. These two values close it.
+ *
+ * The rendered piece PNG is the mirror of the path (Figma drew it with the
+ * short edge on the right), hence the flip on the image. */
+const CX = 500, CY = 500;
+const MID_Y = 2081;            // the path's own axis of symmetry
+const P_W = 2555;              // path width
+let SCALE = 0.10415;
+
+/* Spacing.
+ * FIT is where the inner edge sits when the six pieces close up with no gap.
+ * It falls out of the path: the inner edge is 1229.74 long, and an edge of
+ * that length on a regular hexagon sits at 1229.74/2 * sqrt(3) from centre.
+ * PUSH then slides every piece out along its own axis. Because neighbours
+ * diverge at 30 degrees, that opens a channel of constant width PUSH/2
+ * between each pair and widens the centre hole by the same move — which is
+ * what the Figma artwork does. */
+const FIT_Q = new URLSearchParams(location.search);
+if (FIT_Q.has('scale')) SCALE = Number(FIT_Q.get('scale'));
+const FIT = 1064.9 * SCALE;
+
+/* The artwork has a gap on every side of every piece, including at the outer
+ * corners, so two knobs are needed rather than one:
+ *   PUSH   slides each piece out along its own axis, opening the centre and
+ *          putting a constant-width channel between neighbours.
+ *   SHRINK pulls each piece in towards its own centroid, which adds the gap
+ *          at the outer rim that PUSH alone cannot make.
+ * Both were fitted by measuring the Figma render and matching three ratios:
+ * hole width, channel width and overall size. Override either from the URL
+ * (?push=&shrink=&scale=) to re-fit if the artwork changes. */
+const Q = new URLSearchParams(location.search);
+const num = (k, d) => (Q.has(k) ? Number(Q.get(k)) : d);
+const PUSH = num('push', 8);
+const SHRINK = num('shrink', 0.955);
+const GAP = FIT + PUSH;        // centre to inner edge, viewBox units
+
+// Centroid of the trapezoid, where the shrink is anchored.
+const CENTROID_X = (P_W / 3) * ((2 * 4061.88 + 1229.74) / (1229.74 + 4061.88));
+
+/* The exported PNG covers the mask group's box, which is taller than the path
+ * because it carries the soft edge. Centre it on the same axis. */
+const IMG_H = 4235;
+const IMG_Y = MID_Y - IMG_H / 2;
+
+const POOLS = [
+  { id: 'data-for-ai',    title: ['DATA FOR AI'],                  verb: 'INSIGHT' },
+  { id: 'ai-strategy',    title: ['AI STRATEGY &', 'ENGINEERING'], verb: 'ORCHESTRATE' },
+  { id: 'ai-trust',       title: ['AI TRUST'],                     verb: 'ASSURE' },
+  { id: 'physical-ai',    title: ['PHYSICAL AI'],                  verb: 'INNOVATE' },
+  { id: 'agentic-legacy', title: ['AGENTIC LEGACY', 'MODERNIZATION'], verb: 'MODERNIZE' },
+  { id: 'process-ai',     title: ['PROCESS AI'],                   verb: 'TRANSFORM' },
+];
+
+// Index 0 sits on the right, the rest run counter-clockwise, matching both the
+// artwork and the order the live build already uses.
+const angleFor = (i) => -60 * i;
+const baseT = (a, push = 0) =>
+  `rotate(${a} ${CX} ${CY}) translate(${CX + GAP + push} ${CY}) scale(${SCALE}) translate(0 ${-MID_Y})` +
+  ` translate(${CENTROID_X} ${MID_Y}) scale(${SHRINK}) translate(${-CENTROID_X} ${-MID_Y})`;
+
+const NS = 'http://www.w3.org/2000/svg';
+const el = (n, attrs = {}, text) => {
+  const e = document.createElementNS(NS, n);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (text !== undefined) e.textContent = text;
+  return e;
+};
+
+const pieces = document.getElementById('pieces');
+
+POOLS.forEach((pool, i) => {
+  const a = angleFor(i);
+  const g = el('g', { class: 'piece', 'data-id': pool.id, 'data-index': i,
+                      tabindex: '0', role: 'button',
+                      'aria-label': pool.title.join(' ').replace('&', 'and') });
+
+  const bodyG = el('g', { class: 'body', transform: baseT(a) });
+
+  // Artwork, clipped to the outline. The flip sits on the image and the clip
+  // on the wrapper, so the clip stays in the path's own coordinate space.
+  const artG = el('g', { class: 'art', 'clip-path': 'url(#pieceClip)' });
+  artG.appendChild(el('image', {
+    href: 'assets/piece.jpg',
+    x: 0, y: IMG_Y, width: P_W, height: IMG_H,
+    preserveAspectRatio: 'none',
+    transform: `translate(${P_W} 0) scale(-1 1)`,
+  }));
+  bodyG.appendChild(artG);
+
+  // Labels live inside the piece's own space, so they ride every transform and
+  // stay editable text rather than being baked into the artwork.
+  const lg = el('g', { class: 'labels' });
+  const titleX = 1880, verbX = 780;
+  /* Text sits perpendicular to the piece's radial axis, but on the pieces past
+     the vertical that lands it upside down. Work out the angle the type ends
+     up at on screen and turn it back the other way when it would read wrong.
+     Same problem the three.js board solved with labelFlip. */
+  const norm = (d) => ((d + 180) % 360 + 360) % 360 - 180;
+  const flip = Math.abs(norm(a - 90)) > 90;
+  const rot = flip ? 90 : -90;
+  const size = pool.title.length > 1 ? 200 : 235;
+  pool.title.forEach((line, k) => {
+    const y = MID_Y + (k - (pool.title.length - 1) / 2) * 250;
+    lg.appendChild(el('text', {
+      class: 'label', x: titleX, y, 'font-size': size,
+      transform: `rotate(${rot} ${titleX} ${MID_Y})`,
+    }, line));
+  });
+  lg.appendChild(el('text', {
+    class: 'verb', x: verbX, y: MID_Y, 'font-size': 118,
+    transform: `rotate(${rot} ${verbX} ${MID_Y})`,
+  }, pool.verb));
+  bodyG.appendChild(lg);
+
+  // The hit shape goes last so it sits on top of the artwork it belongs to.
+  bodyG.appendChild(el('use', { href: '#hexpiece', class: 'hit' }));
+
+  g.appendChild(bodyG);
+  pieces.appendChild(g);
+});
+
+/* Selection ---------------------------------------------------------------- */
+let selected = null;
+const readout = document.getElementById('readout');
+
+function apply() {
+  document.body.classList.toggle('has-selection', selected !== null);
+  document.querySelectorAll('.piece').forEach((p) => {
+    const i = Number(p.dataset.index);
+    const on = p.dataset.id === selected;
+    p.classList.toggle('is-selected', on);
+    // The chosen piece slides out along its own axis; the rest hold station.
+    p.querySelector('g.body').setAttribute('transform', baseT(angleFor(i), on ? 30 : 0));
+  });
+  const pool = POOLS.find((p) => p.id === selected);
+  readout.textContent = pool ? `${pool.verb} — ${pool.title.join(' ')}` : 'Nothing selected';
+}
+
+const select = (id) => { selected = (selected === id) ? null : id; apply(); };
+
+document.querySelectorAll('.piece').forEach((p) => {
+  p.addEventListener('click', () => select(p.dataset.id));
+  p.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(p.dataset.id); }
+  });
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'Escape') return;
+  if (e.key === 'Escape') { selected = null; return apply(); }
+  const cur = POOLS.findIndex((p) => p.id === selected);
+  const step = e.key === 'ArrowRight' ? 1 : -1;
+  const next = cur < 0 ? 0 : (cur + step + POOLS.length) % POOLS.length;
+  selected = POOLS[next].id;
+  apply();
+});
+
+/* Deep links --------------------------------------------------------------- */
+/* ?select=<pool id>&hits=1&labels=0 — for review links and for capturing
+ * stills, the same idea as the live build's ?screen= parameter. */
+(() => {
+  const q = new URLSearchParams(location.search);
+  const want = q.get('select');
+  if (want && POOLS.some((p) => p.id === want)) { selected = want; apply(); }
+  if (q.get('hits') === '1') {
+    document.body.classList.add('show-hits');
+    document.getElementById('showHits').checked = true;
+  }
+  if (q.get('labels') === '0') {
+    document.querySelectorAll('.labels').forEach((l) => { l.style.display = 'none'; });
+    document.getElementById('showLabels').checked = false;
+  }
+})();
+
+/* Debug -------------------------------------------------------------------- */
+document.getElementById('showHits').addEventListener('change', (e) =>
+  document.body.classList.toggle('show-hits', e.target.checked));
+document.getElementById('showLabels').addEventListener('change', (e) =>
+  document.querySelectorAll('.labels').forEach((l) => { l.style.display = e.target.checked ? '' : 'none'; }));
+</script>
+</body>
+</html>
