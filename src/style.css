@@ -89,6 +89,14 @@ body {
 /* ---------- background plates ----------
    Two layers that cross-fade so a stage can change its ground without a cut.
    These were WebGL quads until the board stopped being 3D. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  pointer-events: none;
+}
+
 .plate {
   position: fixed;
   inset: 0;
@@ -1956,23 +1964,28 @@ html:not(.fonts-ready) .brand {
   outline: none;
 }
 
-/* ---------- hexagon pieces ----------
-   Evelyn's artwork is dark navy on white, so the framework screen carries a
-   light ground. Everything else in the build is still the dark theme: this is
-   the first screen of the light direction agreed on 1 Sep, not the whole
-   re-theme, which waits on Evelyn and John's designs. */
-body.board-in {
-  background: #ffffff;
-}
-/* The plates are Evelyn's dark artwork and fight the light board, so the
-   framework screen runs on the plain white ground instead. */
-body.board-in .plate,
-body.board-in .pool-bg {
-  opacity: 0;
-}
-
+/* ---------- hexagon pieces ---------- */
 .board-piece {
   cursor: pointer;
+}
+/* The pieces are focusable so the board can be driven from a keyboard, but the
+   browser's default ring is a rectangle around the bounding box, which on a
+   trapezoid lands nowhere near the shape and shows up on every tap. Drop it
+   and let :focus-visible carry the affordance instead: that only fires for
+   keyboard focus, so a tap or a touch shows nothing. */
+.board-piece:focus {
+  outline: none;
+}
+.board-piece:focus-visible {
+  outline: none;
+}
+/* Keyboard focus gets the same treatment as hover rather than a ring, so it
+   follows the shape of the piece instead of boxing it. */
+.board-piece:focus-visible .board-art {
+  filter: brightness(1.14);
+}
+.board-piece:focus-visible .board-body {
+  filter: drop-shadow(0 4px 18px rgba(111, 196, 255, 0.45));
 }
 .board-body {
   /* The transform attribute and the CSS transform property are the same thing
@@ -2013,7 +2026,7 @@ body.board-in .pool-bg {
   letter-spacing: 0.13em;
 }
 .board-centre {
-  fill: #12294d;
+  fill: var(--ink);
   text-anchor: middle;
   pointer-events: none;
   font-family: var(--font-display);
@@ -2056,54 +2069,15 @@ body.board-in .pool-bg {
 
    position is restated because the portrait breakpoint drops the prompt to
    static so it can flow inside the stats card. On the framework screen it is
-   not in that card, so it has to go back to being pinned. */
+   not in that card, so it has to go back to being pinned. Everything else
+   about the pill stays as it was: the ground behind it is the navy backdrop,
+   the same as it always was. */
 body.board-in .prompt {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
   top: auto;
   bottom: clamp(26px, 6vh, 74px);
-  /* The pill was dark glass over a dark plate. On the light ground it flips. */
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(18, 41, 77, 0.16);
-  color: #1b3357;
-  /* The breathe pulse bottoms out at 0.4, which read as a gentle throb over
-     dark glass but takes navy ink on white down to about 2:1. Same pulse,
-     higher floor, so the low point still clears 4.5:1. */
-  animation-name: breathe-light;
-}
-@keyframes breathe-light {
-  0%,
-  100% {
-    opacity: 0.75;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-/* Lockup and controls also sit on white here. The supplied mark is a white
-   knockout, which disappears on the light ground, so it is knocked back to
-   black for this screen. That is a stand-in: the dark-on-light version of the
-   Infosys mark should come from Evelyn rather than be derived with a filter. */
-body.board-in .brand-logo {
-  filter: brightness(0);
-}
-body.board-in .brand-word,
-body.board-in .brand-line {
-  color: #12294d;
-}
-/* The keyboard hint is a presenter affordance, but it still has to be legible
-   rather than invisible, on either ground. */
-body.board-in .hint {
-  color: #4a6288;
-}
-body.board-in .brand-rule {
-  background: rgba(18, 41, 77, 0.28);
-}
-body.board-in .autoplay {
-  border-color: rgba(18, 41, 77, 0.2);
-  background: rgba(255, 255, 255, 0.7);
-  color: #33507d;
 }
 
 /* Deep links arrive already on their screen, so the transitions that normally

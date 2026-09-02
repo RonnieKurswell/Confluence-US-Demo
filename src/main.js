@@ -2,6 +2,7 @@ import '@fontsource-variable/inter';
 
 import { POOLS, BRAND } from './data.js';
 import { createBoard } from './hexboard.js';
+import { createBackdrop } from './backdrop.js';
 
 const IDLE_RESET_MS = 60_000; // kiosk: drop back to the overview after a minute
 const ATTRACT_AFTER_MS = 9_000; // idle on the overview: start sweeping segments
@@ -82,6 +83,11 @@ function resolvePlate() {
   else if (state.selected >= 0) setPlate(POOLS[state.selected].id);
   else setPlate(null);
 }
+
+/* ------------------------------------------------------------------ *
+ * Backdrop
+ * ------------------------------------------------------------------ */
+const backdrop = createBackdrop(document.getElementById('backdrop'));
 
 /* ------------------------------------------------------------------ *
  * The framework hexagon
@@ -797,6 +803,10 @@ addEventListener(
 function paintStage() {
   const boardUp = !introOpen() && !statsOpen() && !warpOpen() && state.selected < 0;
   document.body.classList.toggle('board-in', boardUp);
+  // The specks only drift while the framework is the screen. Everywhere else
+  // something opaque is over them, and a kiosk running all day should not be
+  // animating a particle field nobody can see.
+  backdrop.setRunning(boardUp);
   resolvePlate();
 }
 
@@ -870,6 +880,7 @@ window.__demo = {
   tour,
   TOUR_HOLD,
   platePair,
+  backdrop,
   resolvePlate,
   paintStage,
   STAGE_PLATES,

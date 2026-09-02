@@ -15,6 +15,9 @@
   </head>
   <!-- Starts on the intro; main.js drops the class when Begin is pressed. -->
   <body class="intro-open">
+    <!-- The room the framework sits in: navy vignette plus drifting specks. -->
+    <canvas class="backdrop" id="backdrop" aria-hidden="true"></canvas>
+
     <!-- Background plates. Two stacked layers that cross-fade, so a stage can
          change its ground without a cut. Used to be WebGL quads. -->
     <div class="plate" id="plateA" aria-hidden="true"></div>
