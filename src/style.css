@@ -86,12 +86,49 @@ body {
   cursor: default;
 }
 
-#stage {
+/* ---------- background plates ----------
+   Two layers that cross-fade so a stage can change its ground without a cut.
+   These were WebGL quads until the board stopped being 3D. */
+.plate {
   position: fixed;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity 0.55s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ---------- the framework hexagon ----------
+   Evelyn's artwork, six instances of one traced path. Sits behind the copy and
+   above the plates. */
+.board {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 2;
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+/* Only up on the framework screen: the intro, the stats card, the warp and an
+   open pool all own the whole screen. */
+body.board-in .board {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.board-svg {
+  width: min(76vh, 88vw);
+  height: min(76vh, 88vw);
+  overflow: visible;
+  /* Lifted a touch so the room left over sits under the board, where the tap
+     prompt goes, rather than being split evenly above and below. */
+  margin-bottom: 4vh;
 }
 
 /* ---------- brand lockup ----------
@@ -1729,12 +1766,7 @@ body.warp-open .autoplay {
    does, heaviest on the left in landscape and rolling to the bottom in portrait
    where the copy becomes a sheet. If a plate ever fights the words, lift this
    rather than dimming the plate. */
-#stage {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 1;
-}
+
 .pool-bg {
   position: fixed;
   inset: 0;
@@ -1922,4 +1954,164 @@ html:not(.fonts-ready) .brand {
   background: rgba(120, 180, 255, 0.14);
   border-color: rgba(140, 195, 255, 0.45);
   outline: none;
+}
+
+/* ---------- hexagon pieces ----------
+   Evelyn's artwork is dark navy on white, so the framework screen carries a
+   light ground. Everything else in the build is still the dark theme: this is
+   the first screen of the light direction agreed on 1 Sep, not the whole
+   re-theme, which waits on Evelyn and John's designs. */
+body.board-in {
+  background: #ffffff;
+}
+/* The plates are Evelyn's dark artwork and fight the light board, so the
+   framework screen runs on the plain white ground instead. */
+body.board-in .plate,
+body.board-in .pool-bg {
+  opacity: 0;
+}
+
+.board-piece {
+  cursor: pointer;
+}
+.board-body {
+  /* The transform attribute and the CSS transform property are the same thing
+     in modern browsers, so CSS's default 50%-of-the-box origin would silently
+     move every piece. Pin it to the viewBox origin. */
+  transform-box: view-box;
+  transform-origin: 0 0;
+  transition: transform 0.46s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.38s ease;
+}
+.board-art {
+  transition: filter 0.38s ease;
+}
+
+/* The hit shape is the traced outline, invisible but clickable. This is why
+   the board is an SVG rather than six images: the tap lands on the real
+   geometry, so the transparent corner of one piece never steals its
+   neighbour's touch. */
+.board-hit {
+  fill: transparent;
+}
+
+.board-title {
+  fill: #ffffff;
+  text-anchor: middle;
+  pointer-events: none;
+  font-family: var(--font-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+.board-verb {
+  fill: #cfe0f7;
+  text-anchor: middle;
+  pointer-events: none;
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+}
+.board-centre {
+  fill: #12294d;
+  text-anchor: middle;
+  pointer-events: none;
+  font-family: var(--font-display);
+  font-weight: 500;
+  transition: opacity 0.3s ease;
+}
+
+/* Hover lifts one piece. Never fires on the kiosk touchscreen, so it is
+   pointer affordance only. */
+.board-piece:hover .board-art {
+  filter: brightness(1.09);
+}
+.board-piece:hover .board-body {
+  filter: drop-shadow(0 4px 16px rgba(18, 41, 77, 0.32));
+}
+
+/* The attract sweep glows but does not move: on the old 3D board lifting a
+   sector scaled it under perspective, which read as the board bugging out
+   rather than as a highlight travelling round it. */
+.board-piece.is-attract .board-art {
+  filter: brightness(1.14);
+}
+
+.board-svg.has-selection .board-piece:not(.is-selected) .board-body {
+  opacity: 0.3;
+}
+.board-svg.has-selection .board-centre {
+  opacity: 0.22;
+}
+.board-piece.is-selected .board-art {
+  filter: brightness(1.13);
+}
+.board-piece.is-selected .board-body {
+  filter: drop-shadow(0 8px 30px rgba(18, 41, 77, 0.45));
+}
+
+/* The tap prompt sat under the board's projected bottom vertex, which needed
+   the 3D camera to work out. The board is a fixed-size square now, so the
+   prompt just parks under it.
+
+   position is restated because the portrait breakpoint drops the prompt to
+   static so it can flow inside the stats card. On the framework screen it is
+   not in that card, so it has to go back to being pinned. */
+body.board-in .prompt {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  top: auto;
+  bottom: clamp(26px, 6vh, 74px);
+  /* The pill was dark glass over a dark plate. On the light ground it flips. */
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(18, 41, 77, 0.16);
+  color: #1b3357;
+  /* The breathe pulse bottoms out at 0.4, which read as a gentle throb over
+     dark glass but takes navy ink on white down to about 2:1. Same pulse,
+     higher floor, so the low point still clears 4.5:1. */
+  animation-name: breathe-light;
+}
+@keyframes breathe-light {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+/* Lockup and controls also sit on white here. The supplied mark is a white
+   knockout, which disappears on the light ground, so it is knocked back to
+   black for this screen. That is a stand-in: the dark-on-light version of the
+   Infosys mark should come from Evelyn rather than be derived with a filter. */
+body.board-in .brand-logo {
+  filter: brightness(0);
+}
+body.board-in .brand-word,
+body.board-in .brand-line {
+  color: #12294d;
+}
+/* The keyboard hint is a presenter affordance, but it still has to be legible
+   rather than invisible, on either ground. */
+body.board-in .hint {
+  color: #4a6288;
+}
+body.board-in .brand-rule {
+  background: rgba(18, 41, 77, 0.28);
+}
+body.board-in .autoplay {
+  border-color: rgba(18, 41, 77, 0.2);
+  background: rgba(255, 255, 255, 0.7);
+  color: #33507d;
+}
+
+/* Deep links arrive already on their screen, so the transitions that normally
+   carry you there are suppressed for two frames. Without this a capture catches
+   the board and the plate halfway through their fade. */
+body.no-anim *,
+body.no-anim *::before,
+body.no-anim *::after {
+  transition: none !important;
+  animation: none !important;
 }

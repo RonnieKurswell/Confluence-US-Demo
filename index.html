@@ -15,9 +15,14 @@
   </head>
   <!-- Starts on the intro; main.js drops the class when Begin is pressed. -->
   <body class="intro-open">
-    <!-- Per-pool background plates, behind the WebGL canvas -->
+    <!-- Background plates. Two stacked layers that cross-fade, so a stage can
+         change its ground without a cut. Used to be WebGL quads. -->
+    <div class="plate" id="plateA" aria-hidden="true"></div>
+    <div class="plate" id="plateB" aria-hidden="true"></div>
     <div class="pool-bg" id="poolBg" aria-hidden="true"></div>
-    <canvas id="stage"></canvas>
+
+    <!-- The framework hexagon. hexboard.js mounts the SVG in here. -->
+    <div class="board" id="board"></div>
 
     <!-- Brand lockup -->
     <header class="brand" id="lockup">

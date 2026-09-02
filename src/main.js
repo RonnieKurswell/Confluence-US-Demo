@@ -1,15 +1,7 @@
 import '@fontsource-variable/inter';
 
-import * as THREE from 'three';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-
-import { POOLS, BRAND, PALETTE } from './data.js';
-import { buildHexagon, R } from './hex.js';
-import { createCoreViz } from './coreviz.js';
-import { createConstellation } from './constellation.js';
+import { POOLS, BRAND } from './data.js';
+import { createBoard } from './hexboard.js';
 
 const IDLE_RESET_MS = 60_000; // kiosk: drop back to the overview after a minute
 const ATTRACT_AFTER_MS = 9_000; // idle on the overview: start sweeping segments
@@ -27,427 +19,101 @@ const WARP_TAIL_MS = 3_200;
 const WARP_NAME_MS = 1_100;
 const FOCUS_SCALE = 2.5; // how far the board zooms when a pool is opened (2.1 -> +20%)
 
-/* ------------------------------------------------------------------ *
- * Renderer, scene, camera
- * ------------------------------------------------------------------ */
-const canvas = document.getElementById('stage');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(PALETTE.bg);
-scene.fog = new THREE.Fog(PALETTE.bg, 26, 52);
-
-const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
-camera.position.set(0, 0, 16);
-
-/* ------------------------------------------------------------------ *
- * Lighting
- * ------------------------------------------------------------------ */
-scene.add(new THREE.AmbientLight(0x4d6fa8, 0.55));
-
-const key = new THREE.DirectionalLight(0xdcecff, 2.1);
-key.position.set(-7, 9, 12);
-scene.add(key);
-
-const fill = new THREE.DirectionalLight(0x2f7ad6, 1.0);
-fill.position.set(9, -6, 8);
-scene.add(fill);
-
-const rim = new THREE.PointLight(0x36d6ff, 34, 34, 2);
-rim.position.set(0, 0, -5);
-scene.add(rim);
-
-/* ------------------------------------------------------------------ *
- * Backdrop: vignette plane + drifting particles
- * ------------------------------------------------------------------ */
-function backdropTexture() {
-  const c = document.createElement('canvas');
-  c.width = c.height = 512;
-  const ctx = c.getContext('2d');
-  const g = ctx.createRadialGradient(256, 256, 20, 256, 256, 256);
-  g.addColorStop(0, '#0e2044');
-  g.addColorStop(0.45, '#07102a');
-  g.addColorStop(1, '#03050c');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 512, 512);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
-const backdrop = new THREE.Mesh(
-  new THREE.PlaneGeometry(140, 140),
-  new THREE.MeshBasicMaterial({ map: backdropTexture(), depthWrite: false })
-);
-backdrop.position.z = -22;
-scene.add(backdrop);
-
-const PARTICLES = 900;
-const pPos = new Float32Array(PARTICLES * 3);
-const pSeed = new Float32Array(PARTICLES);
-for (let i = 0; i < PARTICLES; i++) {
-  const r = 6 + Math.random() * 22;
-  const a = Math.random() * Math.PI * 2;
-  pPos[i * 3] = Math.cos(a) * r;
-  pPos[i * 3 + 1] = Math.sin(a) * r * 0.72;
-  pPos[i * 3 + 2] = -14 + Math.random() * 18;
-  pSeed[i] = Math.random() * 6.283;
-}
-const pGeo = new THREE.BufferGeometry();
-pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-const particles = new THREE.Points(
-  pGeo,
-  new THREE.PointsMaterial({
-    color: 0x6fc4ff,
-    size: 0.055,
-    transparent: true,
-    opacity: 0.55,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  })
-);
-scene.add(particles);
-
-/* ------------------------------------------------------------------ *
- * Hexagon
- * ------------------------------------------------------------------ */
-const world = new THREE.Group();
-scene.add(world);
-
-// The stats screen gets its own field: hexagons drifting in depth, the lattice
-// the framework is built from before it resolves into the board.
-const constellation = createConstellation();
-scene.add(constellation.object);
-let statsIn = 0;
-
-// Canvas text falls back silently if the face has not loaded, and the board
-// bakes its labels into textures once — so wait for Geist before building.
-// These are the weights the design actually uses — 500 for display and titles,
-// 600 for eyebrows and controls. Awaiting the wrong weights let the board bake
-// its label textures in the fallback face, and the DOM copy paint then reflow,
-// which is the flicker and text crop on first load.
+/* The copy above the fold is held until the face is in — see .fonts-ready in
+ * the stylesheet. The board no longer bakes its labels into canvas textures,
+ * but the DOM copy still paints and then reflows if it lands in the fallback
+ * face first, which is the flicker on first load. These are the weights the
+ * design actually uses: 500 for display and titles, 600 for eyebrows.
+ *
+ * This used to sit beside the three.js board build. It moved here when that
+ * went, and it must not be dropped: without it every screen's copy, and the
+ * lockup with it, stays at opacity 0 for good. */
 await Promise.all(
   ['500 40px Geist', '600 40px Geist'].map((f) => document.fonts.load(f).catch(() => {}))
 );
-// Everything above the fold is held until the face is in — see .fonts-ready.
 document.documentElement.classList.add('fonts-ready');
 
-const { group: hexGroup, pools, core, coreTitle, corePlate } = buildHexagon();
-world.add(hexGroup);
-
-// Opening a pool fades the rest of the board out, so every material that takes
-// part needs to be able to carry an alpha.
-const corePlateMat = corePlate.material;
-corePlateMat.transparent = true;
-pools.forEach((p) => {
-  p.materials.forEach((m) => (m.transparent = true));
-  p.fade = 1;
-  p.targetFade = 1;
-
-  // Corners of the sector in board space, captured while `world` is still
-  // untransformed. Projecting these each frame gives the sector's true screen
-  // extent — the trapezoid maths alone under-measured it and the instruction
-  // ended up sitting on the object.
-  const box = new THREE.Box3().setFromObject(p.holder);
-  p.corners = [];
-  for (const x of [box.min.x, box.max.x])
-    for (const y of [box.min.y, box.max.y])
-      for (const z of [box.min.z, box.max.z]) p.corners.push(new THREE.Vector3(x, y, z));
-});
-
-// A hex ring tracing the inner boundary — the "deeply interconnected" idea,
-// shown rather than written. Fades away once a pool is open. Six-sided, to stay
-// consistent with the rest of the visual language.
-const RING_R = R * 0.49;
-const ringPoint = (t) => {
-  const u = ((t % 1) + 1) % 1;
-  const seg = Math.floor(u * 6);
-  const f = u * 6 - seg;
-  const a0 = (30 + seg * 60) * (Math.PI / 180);
-  const a1 = (30 + (seg + 1) * 60) * (Math.PI / 180);
-  return new THREE.Vector3(
-    THREE.MathUtils.lerp(Math.cos(a0), Math.cos(a1), f) * RING_R,
-    THREE.MathUtils.lerp(Math.sin(a0), Math.sin(a1), f) * RING_R,
-    0.24
-  );
-};
-const ringLine = new THREE.LineLoop(
-  new THREE.BufferGeometry().setFromPoints([...Array(6)].map((_, i) => ringPoint(i / 6))),
-  new THREE.LineBasicMaterial({ color: 0x5fd8ff, transparent: true, opacity: 0.3, toneMapped: false })
-);
-hexGroup.add(ringLine);
-
-/* Per-pool background plates.
+/* ------------------------------------------------------------------ *
+ * Background plates
  *
- * These live INSIDE the scene rather than as a DOM layer behind the canvas. The
- * obvious approach — a transparent canvas over an <img> — does not work here:
- * the post-processing chain writes opaque alpha, so the canvas paints over
- * whatever sits behind it no matter what `alpha: true` promises. In the scene
- * there is no compositing question at all.
- *
- * Two quads parked well behind everything, cross-faded against each other, so
- * moving between pools dissolves rather than cuts. A missing texture just leaves
- * the quad empty and the base colour shows, the same resolve-if-present
- * behaviour as the videos. */
-const PLATE_Z = -30;
-// How strongly a plate reads. The full-strength plate was too bright behind the
+ * Two DOM layers cross-faded against each other, so a stage can change its
+ * ground without a cut. These were WebGL quads until the board stopped being
+ * 3D; as plain elements they cost nothing and the browser does the fade.
+ * ------------------------------------------------------------------ */
+
+// How strongly a pool plate reads. Full strength was too bright behind the
 // copy, so it sits at 80%. Live on __demo for tuning at the venue.
 const PLATE_OPACITY = 0.8;
-const plateLoader = new THREE.TextureLoader();
-const plateTextures = POOLS.map((pool) => {
-  const tex = plateLoader.load(
-    `${import.meta.env.BASE_URL}media/backgrounds/${pool.id}.jpg`,
-    undefined,
-    undefined,
-    () => {} // missing file is not an error, it just stays blank
-  );
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-});
 
-// The stats page and the framework overview get their own plates. They are
-// designed to sit at full strength: the stats plate already carries the tint
-// Evelyn puts over it in Figma, and the overview plate is dark by design, so
-// dimming either one to PLATE_OPACITY would just muddy artwork that is already
-// balanced for the copy sitting on it.
-const loadPlate = (name) => {
-  const tex = plateLoader.load(
-    `${import.meta.env.BASE_URL}media/backgrounds/${name}.jpg`,
-    undefined,
-    undefined,
-    () => {}
-  );
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-};
-const STAGE_PLATES = { stats: loadPlate('stats'), overview: loadPlate('overview') };
+const plateUrl = (name) => `${import.meta.env.BASE_URL}media/backgrounds/${name}.jpg`;
 
-const platePair = [0, 1].map(() => {
-  const mat = new THREE.MeshBasicMaterial({
-    transparent: true,
-    opacity: 0,
-    depthWrite: false,
-    // depthTest stays ON: this quad fills the frame, and with the test off it
-    // would paint over any opaque geometry drawn before it in the transparent
-    // phase. Parked at PLATE_Z it is behind everything anyway.
-    toneMapped: false,
-    fog: false,
-  });
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat);
-  mesh.position.z = PLATE_Z;
-  mesh.renderOrder = -10; // behind the starfield and the board
-  mesh.visible = false;
-  scene.add(mesh);
-  return mesh;
-});
-// Which of the pair is currently showing, and what each is fading toward.
-const plateState = { front: 0, target: [0, 0] };
+// The stats card gets its own plate at full strength: it already carries the
+// tint Evelyn puts over it in Figma, so dimming it would just muddy artwork
+// that is already balanced for the copy sitting on it.
+//
+// The framework screen no longer takes one. overview.jpg is dark by design and
+// the new hexagon is dark navy on white, so the two cannot share a screen. A
+// light replacement is Evelyn's to supply.
+const STAGE_PLATES = { stats: 'stats' };
 
-function setPlate(tex, strength = PLATE_OPACITY) {
-  if (tex && platePair[plateState.front].material.map === tex) return;
-  if (!tex) {
-    plateState.target = [0, 0];
+const platePair = [document.getElementById('plateA'), document.getElementById('plateB')];
+const plateState = { front: 0, current: null };
+
+function setPlate(name, strength = PLATE_OPACITY) {
+  if (plateState.current === name) return;
+  plateState.current = name;
+  if (!name) {
+    platePair.forEach((n) => (n.style.opacity = '0'));
     return;
   }
-  // Bring the idle quad in with the new plate and retire the other.
+  // Bring the idle layer in with the new plate and retire the other.
   const next = 1 - plateState.front;
-  platePair[next].material.map = tex;
-  platePair[next].material.needsUpdate = true;
-  platePair[next].visible = true;
+  platePair[next].style.backgroundImage = `url("${plateUrl(name)}")`;
+  platePair[next].style.opacity = String(strength);
+  platePair[plateState.front].style.opacity = '0';
   plateState.front = next;
-  plateState.target = next === 0 ? [strength, 0] : [0, strength];
 }
 
 // Which plate belongs to the moment. Driven by the stage rather than by
-// select(), so the stats page and the empty board get one too and not just an
-// open pool. Called every frame; setPlate is a no-op when nothing has changed.
+// select(), so the stats card gets one too and not just an open pool.
 function resolvePlate() {
   if (introOpen() || warpOpen()) setPlate(null);
   else if (statsOpen()) setPlate(STAGE_PLATES.stats, 1);
-  else if (state.selected >= 0) setPlate(plateTextures[state.selected]);
-  else setPlate(STAGE_PLATES.overview, 1);
-}
-
-const vizCache = new Map();
-function vizFor(i) {
-  if (!vizCache.has(i)) {
-    const v = createCoreViz(POOLS[i].viz, POOLS[i].accent);
-    v.object.scale.setScalar(0.95);
-    // Sits behind its own sector, so it stays with the pool when the board
-    // pushes that sector to the middle of the screen.
-    const th = (i * 60 * Math.PI) / 180;
-    const r = R * ((1.0 + 0.795) / 2) * Math.cos(Math.PI / 6);
-    v.object.position.set(Math.cos(th) * r, Math.sin(th) * r, -0.9);
-    hexGroup.add(v.object);
-    vizCache.set(i, v);
-  }
-  return vizCache.get(i);
+  else if (state.selected >= 0) setPlate(POOLS[state.selected].id);
+  else setPlate(null);
 }
 
 /* ------------------------------------------------------------------ *
- * Post-processing
+ * The framework hexagon
  * ------------------------------------------------------------------ */
-const composer = new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.34, 0.6, 0.93);
-composer.addPass(bloom);
-composer.addPass(new OutputPass());
+const board = createBoard({
+  host: document.getElementById('board'),
+  pools: POOLS,
+  artUrl: `${import.meta.env.BASE_URL}media/hex/piece.jpg`,
+  centre: BRAND.centerTitle,
+  // A tap in a channel between pieces reads as "off the board" and closes the
+  // pool, the same as tapping the background did on the 3D version.
+  onSelect: (i) => (i >= 0 ? select(i) : deselect()),
+});
 
 /* ------------------------------------------------------------------ *
- * Layout / resize
+ * Layout
  * ------------------------------------------------------------------ */
 const state = {
   selected: -1,
-  hovered: -1,
   isPortrait: false,
-  panelFraction: 0,
   lastInput: performance.now(),
   attract: -1,
   attractTimer: 0,
 };
 
-const target = { x: 0, y: 0, scale: 1, tiltX: 0, tiltY: 0, spin: 0, roll: 0, labelFlip: 0 };
-const current = { x: 0, y: 0, scale: 1, tiltX: 0, tiltY: 0, spin: 0, roll: 0, labelFlip: 0 };
-
 function layout() {
-  const w = innerWidth;
-  const h = innerHeight;
-  renderer.setSize(w, h, false);
-  composer.setSize(w, h);
-  bloom.setSize(w, h);
-  camera.aspect = w / h;
-
-  state.isPortrait = h / w > 1 || w < 900;
-
-  // Distance that keeps the whole hexagon in frame on both axes, with margin
-  // for the lockup above and the fact strip below.
-  const half = Math.tan((camera.fov * Math.PI) / 360);
-  // Portrait leaves more headroom: the prompt and the copy column stack under
-  // the board there rather than sitting beside it.
-  const rNeeded = R * (state.isPortrait ? 1.26 : 1.7);
-  camera.position.z = Math.max(rNeeded / half, rNeeded / (half * camera.aspect));
-  camera.updateProjectionMatrix();
-
-  // Fraction of the viewport the detail panel covers.
-  // Keep in step with --panel-w in style.css.
-  // Dormant: its only reader is the open-pool branch of applyTargets, which no
-  // longer moves anything visible now the board hides behind an open pool.
-  const panelPx = state.isPortrait ? 0 : Math.min(w * 0.46, 880);
-  state.panelFraction = panelPx / w;
-
-  applyTargets();
-}
-
-// Same angle, nearest full turn to `ref` — keeps damped rotations on the short
-// path instead of unwinding through a whole revolution.
-function nearestTurn(angle, ref) {
-  const TAU = Math.PI * 2;
-  return angle + Math.round((ref - angle) / TAU) * TAU;
-}
-
-function applyTargets() {
-  const half = Math.tan((camera.fov * Math.PI) / 360);
-  const worldW = 2 * camera.position.z * half * camera.aspect;
-  const worldH = 2 * camera.position.z * half;
-
-  // Background plates fill the frustum at their own depth, which is further from
-  // the camera than the board, so they need their own measure.
-  const plateD = camera.position.z - PLATE_Z;
-  const plateH = 2 * plateD * half;
-  platePair.forEach((mesh) => mesh.scale.set(plateH * camera.aspect, plateH, 1));
-
-  // Centre of the space the copy column leaves free. The column is on the left,
-  // so the board lives to the right of it.
-  const freeCentreX = (worldW * state.panelFraction) / 2;
-
-  if (state.selected < 0) {
-    // Nothing shares the hexagon screen any more — the stats moved to their own
-    // page — so the board sits centred rather than shifted off a column, and it
-    // can use the room the old fact strip used to take.
-    //
-    // Solved against the frustum rather than hard-coded: the camera pulls back
-    // by aspect (see layout), so a fixed scale that filled a 16:9 kiosk would
-    // overflow a portrait panel. Board spans 2R point-to-point and 2R*cos30
-    // across the flats; leave a little for the labels and the outer glow.
-    const boardH = R * 2 * 1.02;
-    const boardW = R * 2 * Math.cos(Math.PI / 6) * 1.02;
-    // 0.8, not more: the tap sign is parked just under the board's bottom
-    // vertex, and at a tighter fill it fell off the bottom of the screen.
-    const fill = Math.min((worldH * 0.8) / boardH, (worldW * 0.9) / boardW);
-    target.x = 0;
-    // Lifted slightly in landscape so the room left over sits under the board,
-    // where the tap sign goes, rather than being split evenly above and below.
-    target.y = state.isPortrait ? worldH * 0.04 : worldH * 0.025;
-    target.scale = Math.max(1, fill);
-    target.tiltX = 0;
-    target.tiltY = 0;
-    target.roll = nearestTurn(0, current.roll);
-    target.labelFlip = 0;
-    return;
-  }
-
-  // DORMANT while the board is hidden on an open pool (see wantBoard in the
-  // frame loop). Kept, and kept correct, because it is the whole roll solve:
-  // restoring the board is one line there, and this has to still be right when
-  // that happens. target.labelFlip and current.roll are still read every frame.
-  //
-  // Opening a pool pushes that sector to the middle and zooms into it. Solving
-  // for position rather than animating a child keeps one transform authoritative.
-  const theta = pools[state.selected].theta;
-  const th = (theta * Math.PI) / 180;
-  const rSector = R * ((1.0 + 0.795) / 2) * Math.cos(Math.PI / 6);
-
-  // With the other five hidden there is nothing left to disorient, so the board
-  // rolls until the open sector sits square — its label reads straight across.
-  // Squaring it up alone leaves a half-turn ambiguity, and taking the shortest
-  // one lands three of the six mirrored: the verb band above the title for some
-  // pools and below it for others, which reads as the object jumping up and
-  // down as visitors swipe. So pick the half-turn that always points the sector
-  // outward-down, putting the verb above the title for all six — the same
-  // eyebrow-then-title order the copy column uses.
-  let deg = theta + 90;
-  while (deg > 90) deg -= 180;
-  while (deg <= -90) deg += 180;
-  let rollDeg = -deg;
-  let outward = (theta + rollDeg) % 360;
-  if (outward > 180) outward -= 360;
-  if (outward <= -180) outward += 360;
-  if (outward > 0) rollDeg += 180;
-
-  // Unwrap to whichever full turn sits closest to where the board already is,
-  // so the extra half-turn never becomes a 300-degree spin between two pools.
-  target.roll = nearestTurn((rollDeg * Math.PI) / 180, current.roll);
-  // The labels carry the opposite of whatever the roll adds beyond squaring up,
-  // so the text stays upright while the geometry turns underneath it.
-  target.labelFlip = -pools[state.selected].titleLabel.userData.baseRot - target.roll;
-
-  // Position has to solve against the roll, or the sector lands off-centre.
-  const cos = Math.cos(target.roll);
-  const sin = Math.sin(target.roll);
-  const px = Math.cos(th) * rSector;
-  const py = Math.sin(th) * rSector;
-  const rx = px * cos - py * sin;
-  const ry = px * sin + py * cos;
-
-  if (state.isPortrait) {
-    target.scale = FOCUS_SCALE * 0.62;
-    target.x = -target.scale * rx;
-    target.y = worldH * 0.2 - target.scale * ry;
-  } else {
-    target.scale = FOCUS_SCALE;
-    target.x = freeCentreX - target.scale * rx;
-    target.y = -target.scale * ry;
-  }
-  // Straight on while focused — a tilt fights the zoom and hurts legibility.
-  target.tiltX = 0;
-  target.tiltY = 0;
+  state.isPortrait = innerHeight / innerWidth > 1 || innerWidth < 900;
 }
 
 addEventListener('resize', layout);
 layout();
+
 
 /* ------------------------------------------------------------------ *
  * DOM
@@ -593,6 +259,7 @@ function enterExperience() {
   document.body.classList.remove('intro-open');
   // If the warp cannot run, land on the stats page anyway.
   if (!playWarp()) document.body.classList.add('stats-open');
+  paintStage();
   state.lastInput = performance.now();
 }
 
@@ -601,6 +268,7 @@ const statsOpen = () => document.body.classList.contains('stats-open');
 function leaveStats() {
   seen.clear();
   document.body.classList.remove('stats-open');
+  paintStage();
   state.lastInput = performance.now();
 }
 
@@ -613,6 +281,7 @@ function returnToIntro() {
   hideCases();
   deselect();
   document.body.classList.add('intro-open');
+  paintStage();
   introVideo.currentTime = 0;
   playIntro();
   state.lastInput = performance.now();
@@ -639,6 +308,7 @@ function endWarp() {
   document.body.classList.remove('warp-open');
   // The warp lands on the stats page, not straight on the board.
   if (!introOpen()) document.body.classList.add('stats-open');
+  paintStage();
   warpVideo.pause();
   state.lastInput = performance.now();
 }
@@ -646,6 +316,7 @@ function endWarp() {
 function playWarp() {
   if (!warpVideo.src) return false;
   document.body.classList.add('warp-open');
+  paintStage();
   warpVideo.currentTime = 0;
   // Metadata is normally in by the time anyone reads the intro and clicks, but
   // fall back to the source's own length rather than skipping the transition.
@@ -877,17 +548,8 @@ function select(i) {
 
   buildMedia(pool);
 
-  pools.forEach((p, k) => {
-    p.targetLift = k === i ? 1 : 0;
-    p.targetGlow = k === i ? 1 : 0;
-    p.targetDim = 1;
-    // Everything but the open pool clears out of the way entirely.
-    p.targetFade = k === i ? 1 : 0;
-  });
-
-  vizCache.forEach((v, k) => (v.object.visible = k === i));
-  vizFor(i).object.visible = true;
-  applyTargets();
+  board.setSelected(i);
+  paintStage();
   // Last, so the freshly built media node is included in the stagger.
   replayPanelSwap(dir);
 }
@@ -904,14 +566,8 @@ function deselect() {
   dom.panel.classList.remove('open');
   dom.panel.setAttribute('aria-hidden', 'true');
   document.body.style.removeProperty('--accent');
-  pools.forEach((p) => {
-    p.targetLift = 0;
-    p.targetGlow = 0;
-    p.targetDim = 1;
-    p.targetFade = 1;
-  });
-  vizCache.forEach((v) => (v.object.visible = false));
-  applyTargets();
+  board.setSelected(-1);
+  paintStage();
 }
 
 /* Once a visitor has opened all six, swiping on returns them to the framework
@@ -942,27 +598,27 @@ const cycle = (dir) => {
 /* ------------------------------------------------------------------ *
  * Pointer + keyboard input
  * ------------------------------------------------------------------ */
-const raycaster = new THREE.Raycaster();
-const ndc = new THREE.Vector2();
-const hitTargets = pools.flatMap((p) => p.hitTargets);
-
-function poolAt(clientX, clientY) {
-  ndc.x = (clientX / innerWidth) * 2 - 1;
-  ndc.y = -(clientY / innerHeight) * 2 + 1;
-  raycaster.setFromCamera(ndc, camera);
-  const hit = raycaster.intersectObjects(hitTargets, false)[0];
-  if (!hit) return -1;
-  let o = hit.object;
-  while (o && o.userData.poolIndex === undefined) o = o.parent;
-  return o ? o.userData.poolIndex : -1;
-}
-
+/* Taps on the board itself are handled inside hexboard.js, where the traced
+ * outline does the hit testing. This layer only has to catch the two gestures
+ * that are not a tap on a piece: a horizontal swipe between pools, and a tap
+ * anywhere else on the screen, which closes an open pool.
+ *
+ * It listens on the document rather than on a canvas, because there is no
+ * canvas any more, and skips anything inside the panel or an overlay so it
+ * never swallows a button press. */
 let down = null;
-canvas.addEventListener('pointerdown', (e) => {
-  down = { x: e.clientX, y: e.clientY };
+const IGNORE_HIT = '.panel, .video-layer, .cases-layer, .intro, .overview, .autoplay, .brand, button, a';
+
+// e.target is not always an Element — a synthetic event can carry the document
+// itself — and closest() only exists on elements.
+const hits = (target, sel) => (target instanceof Element ? target.closest(sel) : null);
+
+document.addEventListener('pointerdown', (e) => {
   state.lastInput = performance.now();
+  down = hits(e.target, IGNORE_HIT) ? null : { x: e.clientX, y: e.clientY };
 });
-canvas.addEventListener('pointerup', (e) => {
+
+document.addEventListener('pointerup', (e) => {
   state.lastInput = performance.now();
   if (!down) return;
   const dx = e.clientX - down.x;
@@ -976,18 +632,10 @@ canvas.addEventListener('pointerup', (e) => {
     return;
   }
   if (moved > 14) return; // treat as a drag, not a tap
-  const i = poolAt(e.clientX, e.clientY);
-  if (i >= 0) select(i);
-  else deselect();
+  // A tap that reached the board's own handler has already been dealt with.
+  if (hits(e.target, '.board-piece')) return;
+  if (state.selected >= 0) deselect();
 });
-canvas.addEventListener('pointermove', (e) => {
-  state.lastInput = performance.now();
-  if (e.pointerType === 'touch') return;
-  const i = poolAt(e.clientX, e.clientY);
-  state.hovered = i;
-  canvas.style.cursor = i >= 0 ? 'pointer' : 'default';
-});
-canvas.addEventListener('pointerleave', () => (state.hovered = -1));
 
 /* ------------------------------------------------------------------ *
  * Auto play
@@ -1052,7 +700,10 @@ async function startTour() {
       if (!(await beat(TOUR_HOLD.warp))) return;
       endWarp();
     }
-    if (!statsOpen()) document.body.classList.add('stats-open');
+    if (!statsOpen()) {
+      document.body.classList.add('stats-open');
+      paintStage();
+    }
     if (!(await beat(TOUR_HOLD.stats))) return;
 
     leaveStats();
@@ -1129,186 +780,56 @@ addEventListener(
 );
 
 /* ------------------------------------------------------------------ *
- * Animation loop
+ * Stage
+ *
+ * There is no render loop any more. The board is SVG and the plates are DOM,
+ * so every transition is a CSS one and the browser drives it. What is left is
+ * the kiosk's own bookkeeping — idle timers and the attract sweep — which does
+ * not need a frame callback, so it runs on a quarter-second tick instead.
  * ------------------------------------------------------------------ */
-const damp = (a, b, lambda, dt) => a + (b - a) * (1 - Math.exp(-lambda * dt));
-const clock = new THREE.Clock();
-const projected = new THREE.Vector3();
-let boardIn = 0; // 0 while the intro or stats page is up, 1 on the board
-// Same ramp minus the open-pool clause. The background plates belong to the
-// pool as much as to the board, so they cannot ride boardIn any more.
-let sceneIn = 0;
-const promptAt = { x: -1, y: -1 };
 
-function tick() {
-  const dt = Math.min(clock.getDelta(), 0.05);
-  const t = clock.elapsedTime;
-  const now = performance.now();
-  const idle = now - state.lastInput;
+/* Which stage owns the screen. One class on the body; the stylesheet does the
+ * rest. Every transition calls this — enterExperience, leaveStats, endWarp,
+ * playWarp, returnToIntro, select, deselect and the tour. Declared rather than
+ * assigned so it hoists above those callers. The framework screen is the only one that shows the board, and an open
+ * pool hands the whole right side to its film, so the board clears out with it.
+ * Putting the board back on an open pool is deleting one clause here. */
+function paintStage() {
+  const boardUp = !introOpen() && !statsOpen() && !warpOpen() && state.selected < 0;
+  document.body.classList.toggle('board-in', boardUp);
+  resolvePlate();
+}
 
-  // Kiosk: return to the overview once the visitor walks away, then all the
+paintStage();
+
+const KIOSK_TICK_MS = 250;
+
+setInterval(() => {
+  const idle = performance.now() - state.lastInput;
+
+  // Kiosk: return to the framework once the visitor walks away, then all the
   // way back to the intro loop so the booth resets itself.
   if (state.selected >= 0 && idle > IDLE_RESET_MS) deselect();
   if (!introOpen() && idle > INTRO_RETURN_MS) returnToIntro();
 
   // Attract mode: sweep a highlight around the ring while nobody is touching.
-  if (state.selected < 0 && idle > ATTRACT_AFTER_MS) {
-    state.attractTimer += dt;
-    if (state.attractTimer > 1.6) {
+  if (state.selected < 0 && !introOpen() && !statsOpen() && !warpOpen() && idle > ATTRACT_AFTER_MS) {
+    state.attractTimer += KIOSK_TICK_MS;
+    if (state.attractTimer > 1_600) {
       state.attractTimer = 0;
       state.attract = (state.attract + 1) % POOLS.length;
+      board.setAttract(state.attract);
     }
-  } else if (state.selected >= 0 || idle <= ATTRACT_AFTER_MS) {
+  } else if (state.attract !== -1) {
     state.attract = -1;
     state.attractTimer = 0;
+    board.setAttract(-1);
   }
-
-  // Slow idle spin of the whole board, parked while a pool is open.
-  target.spin = state.selected < 0 ? Math.sin(t * 0.14) * 0.09 : 0;
-
-  current.x = damp(current.x, target.x, 4.2, dt);
-  current.y = damp(current.y, target.y, 4.2, dt);
-  current.scale = damp(current.scale, target.scale, 4.2, dt);
-  current.tiltX = damp(current.tiltX, target.tiltX, 3.4, dt);
-  current.tiltY = damp(current.tiltY, target.tiltY, 3.4, dt);
-  current.spin = damp(current.spin, target.spin, 2.0, dt);
-  current.roll = damp(current.roll, target.roll, 4.2, dt);
-  current.labelFlip = damp(current.labelFlip, target.labelFlip, 4.2, dt);
-
-  resolvePlate();
-
-  // Cross-fade the background plates. The intro and the warp stay on the plain
-  // ground; everything else rides whichever stage is coming up.
-  const plateVis = introOpen() || warpOpen() ? 0 : statsOpen() ? statsIn : sceneIn;
-  platePair.forEach((mesh, k) => {
-    const want = plateState.target[k] * plateVis;
-    mesh.material.opacity = damp(mesh.material.opacity, want, 2.6, dt);
-    mesh.visible = mesh.material.opacity > 0.004;
-  });
-
-  world.position.set(current.x, current.y, 0);
-  world.scale.setScalar(current.scale);
-  world.rotation.set(current.tiltX + Math.sin(t * 0.21) * 0.02, current.tiltY + current.spin, current.roll);
-
-  // Per-segment state.
-  pools.forEach((p, i) => {
-    const isHot = i === state.hovered || i === state.attract;
-    const wantGlow = state.selected === i ? 1 : isHot && state.selected < 0 ? 0.65 : p.targetGlow;
-    // The attract sweep glows but does NOT lift. Lifting moves the sector
-    // toward the camera, and under perspective that scaled it up about 1.8% —
-    // roughly 5px on a 297px band — so every 1.6s one sector grew and the
-    // previous one shrank. Around the ring that read as the board bugging out
-    // rather than as a highlight travelling over it.
-    //
-    // Hover keeps the lift: it is pointer affordance, only one sector at a
-    // time, and it never fires on the kiosk touchscreen.
-    const wantLift = state.selected < 0 && i === state.hovered ? 0.35 : p.targetLift;
-
-    p.glow = damp(p.glow, wantGlow, 6, dt);
-    p.lift = damp(p.lift, wantLift, 5.5, dt);
-    p.dim = damp(p.dim, p.targetDim, 5, dt);
-    // ~0.5s to settle, per the brief: responsive, no sense of a video cut.
-    p.fade = damp(p.fade ?? 1, p.targetFade ?? 1, 9, dt);
-
-    p.holder.visible = p.fade > 0.01;
-    p.materials.forEach((m) => (m.opacity = p.fade * boardIn));
-    p.labels.forEach((l) => {
-      l.material.opacity = p.fade * boardIn * (0.18 + p.dim * 0.82);
-      l.rotation.z = l.userData.baseRot + (state.selected === i ? current.labelFlip : 0);
-    });
-
-    p.holder.position.z = p.lift * 0.85 + (state.selected < 0 ? Math.sin(t * 0.8 + i) * 0.045 : 0);
-    p.rimMesh.material.opacity = p.glow * 0.9 * p.fade * boardIn;
-    p.materials.forEach((m, k) => {
-      // Navy ring stays neutral at rest; the pool's accent only washes in on
-      // hover / select so the board reads as one system.
-      m.emissiveIntensity = (k === 0 ? 0.05 : 0.015) + p.glow * (k === 0 ? 0.3 : 0.24);
-      const base = k === 0 ? PALETTE.outer : PALETTE.inner;
-      const dimmed = k === 0 ? PALETTE.outerDim : PALETTE.innerDim;
-      m.color
-        .setHex(dimmed)
-        .lerp(new THREE.Color(base), p.dim)
-        .lerp(p.accentColor, p.glow * (k === 0 ? 0.42 : 0.3));
-    });
-  });
-
-  // Core plate and ring belong to the hexagon view; they clear out when a pool
-  // takes over the screen.
-  // The whole board is held back until the stats page is dismissed.
-  // The warp has to hold the board back too. Without it the board fades in
-  // behind the wormhole overlay and is briefly visible as that overlay clears,
-  // which reads as the shape flashing and vanishing at the end of the video.
-  // A pool now hands the whole right side to its film, so the board clears out
-  // with it. Everything downstream already multiplies by boardIn, so the
-  // sectors, labels, rims, core, title and ring all follow from this one line.
-  // Putting the board back is deleting the last clause.
-  const wantBoard = introOpen() || statsOpen() || warpOpen() || state.selected >= 0 ? 0 : 1;
-  boardIn = damp(boardIn, wantBoard, 6, dt);
-  sceneIn = damp(sceneIn, introOpen() || statsOpen() || warpOpen() ? 0 : 1, 6, dt);
-  world.visible = boardIn > 0.01;
-
-  // The constellation trades places with it.
-  statsIn = damp(statsIn, statsOpen() ? 1 : 0, 3.2, dt);
-  constellation.update(t, statsIn);
-
-  const boardAlpha = damp(core.userData.alpha ?? 1, state.selected < 0 ? 1 : 0, 9, dt);
-  core.userData.alpha = boardAlpha;
-  core.visible = boardAlpha > 0.01;
-  corePlateMat.opacity = boardAlpha * boardIn;
-
-  // Centre: the title fades out as a pool's visual takes over.
-  const showTitle = state.selected < 0 ? 1 : 0;
-  coreTitle.material.opacity = damp(coreTitle.material.opacity, showTitle * boardIn, 9, dt);
-  coreTitle.visible = coreTitle.material.opacity > 0.01;
-  core.rotation.z = -current.tiltY * 0.4;
-  if (state.selected >= 0) vizFor(state.selected).update(t, dt);
-
-  // Park the "touch a value pool" prompt just below the board. Projecting the
-  // bottom vertex keeps it attached however the board is scaled or shifted.
-  if (state.selected < 0) {
-    projected.set(0, -R * 1.06, 0);
-    hexGroup.localToWorld(projected).project(camera);
-    const px = Math.round((projected.x * 0.5 + 0.5) * innerWidth);
-    const py = Math.round((-projected.y * 0.5 + 0.5) * innerHeight) + 26;
-    if (px !== promptAt.x || py !== promptAt.y) {
-      promptAt.x = px;
-      promptAt.y = py;
-      dom.prompt.style.left = `${px}px`;
-      dom.prompt.style.top = `${py}px`;
-    }
-  }
-
-  // The instruction used to track the selected sector's horizontal centre by
-  // writing an inline `left` here every frame. That inline value beat the
-  // stylesheet, so once the pill stopped being centred on that point it ran
-  // off the right edge. It is anchored by its right edge in CSS now, squared
-  // up with the copy column, and needs no help from the loop.
-
-  // Interconnect ring rides with the overview state.
-  const ringAlpha = coreTitle.material.opacity * boardAlpha * boardIn;
-  ringLine.material.opacity = 0.3 * ringAlpha;
-  ringLine.visible = ringAlpha > 0.02;
-
-  // Backdrop life.
-  const pos = pGeo.attributes.position;
-  for (let i = 0; i < PARTICLES; i++) {
-    pos.array[i * 3 + 1] += Math.sin(t * 0.3 + pSeed[i]) * 0.0016;
-  }
-  pos.needsUpdate = true;
-  particles.rotation.z = t * 0.008;
-  rim.intensity = 70 + Math.sin(t * 1.3) * 22;
-
-  composer.render();
-  requestAnimationFrame(tick);
-}
-
-coreTitle.material.transparent = true;
-coreTitle.material.opacity = 1;
-requestAnimationFrame(tick);
+}, KIOSK_TICK_MS);
 
 /* Deep link straight to a state — for review links and for capturing stills:
  *   ?screen=overview | pool | video | case   &pool=0-5  &case=0-2
- * Transforms are snapped so a capture is never mid-animation. */
+ * Transitions are suppressed for a beat so a capture is never mid-animation. */
 (() => {
   const q = new URLSearchParams(location.search);
   const screen = q.get('screen');
@@ -1325,51 +846,33 @@ requestAnimationFrame(tick);
   if (screen === 'video') showVideo();
   if (screen === 'case') showCase(clamp(q.get('case'), 2));
 
-  Object.assign(current, target);
   // Deep links are meant to arrive already on their screen, so the fades that
   // normally carry you there have to be skipped rather than played. Without
-  // this the board and the background plate spend their first second ramping
-  // up from nothing, which the autoplay walk and any screenshot both catch.
-  boardIn = introOpen() || statsOpen() || warpOpen() || state.selected >= 0 ? 0 : 1;
-  sceneIn = introOpen() || statsOpen() || warpOpen() ? 0 : 1;
-  statsIn = statsOpen() ? 1 : 0;
-  resolvePlate();
-  const plateNow = introOpen() || warpOpen() ? 0 : statsOpen() ? statsIn : sceneIn;
-  platePair.forEach((mesh, k) => {
-    mesh.material.opacity = plateState.target[k] * plateNow;
-    mesh.visible = mesh.material.opacity > 0.004;
-  });
-  pools.forEach((p) => {
-    p.lift = p.targetLift;
-    p.glow = p.targetGlow;
-    p.dim = p.targetDim;
-    // fade was missing, so a deep link into a pool still showed the other five
-    // fading out from full strength.
-    p.fade = p.targetFade;
-  });
-  coreTitle.material.opacity = state.selected < 0 ? 1 : 0;
+  // this the board and the plate spend their first half second ramping up from
+  // nothing, which the autoplay walk and any screenshot both catch.
+  document.body.classList.add('no-anim');
+  paintStage();
+  // Two frames: one for the class to land, one for the snapped state to paint
+  // before transitions are allowed again. The timeout is a backstop, because a
+  // backgrounded or throttled tab may not run a frame callback for a long time
+  // and leaving this class on would kill every transition in the build.
+  const release = () => document.body.classList.remove('no-anim');
+  requestAnimationFrame(() => requestAnimationFrame(release));
+  setTimeout(release, 300);
 })();
 
 // Handy while tuning the booth build; harmless in production.
 window.__demo = {
   state,
-  pools,
-  core,
-  coreTitle,
-  vizCache,
+  board,
   startTour,
   stopTour,
   tour,
   TOUR_HOLD,
   platePair,
   resolvePlate,
+  paintStage,
   STAGE_PLATES,
   select,
   deselect,
-  current,
-  target,
-  camera,
-  hexGroup,
-  R,
-  snap: () => Object.assign(current, target),
 };
