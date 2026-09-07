@@ -37,7 +37,7 @@
   --font: 'Inter Variable', 'Inter', Helvetica, Arial, system-ui, sans-serif;
 
   /* ---- type scale ----
-     One definition per level of information, shared by the intro, the overview
+     One definition per level of information, shared by the intro, the board
      and the detail panel, so the same rank always looks the same. */
   --t-eyebrow: clamp(11.5px, 0.84vw, 13px);
   --t-eyebrow-track: 0.28em;
@@ -76,7 +76,16 @@ html,
 body {
   height: 100%;
   overflow: hidden;
-  background: var(--bg);
+  /* The ground under every stage, and what the framework screen falls back to
+     if its plate fails to load. Carried over from the vignette the old WebGL
+     backdrop painted. */
+  background: radial-gradient(
+      circle at 50% 50%,
+      #0e2044 0%,
+      #07102a 45%,
+      #03050c 100%
+    ),
+    var(--bg);
   color: var(--ink);
   font-family: var(--font);
   -webkit-font-smoothing: antialiased;
@@ -89,14 +98,6 @@ body {
 /* ---------- background plates ----------
    Two layers that cross-fade so a stage can change its ground without a cut.
    These were WebGL quads until the board stopped being 3D. */
-.backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  display: block;
-  pointer-events: none;
-}
-
 .plate {
   position: fixed;
   inset: 0;
@@ -330,10 +331,8 @@ body.intro-open .intro {
 }
 
 /* Everything behind the intro is inert while it is up. */
-body.intro-open .overview,
 body.intro-open .panel,
-body.intro-open .hint,
-body.stats-open .hint {
+body.intro-open .hint {
   opacity: 0;
   pointer-events: none;
 }
@@ -522,175 +521,6 @@ body.warp-open .warp-names span {
 /* ---------- stats screen ----------
    A title card. Centred over the drifting hexagon field, with the three proof
    points as one measured row rather than a stack of boxes. */
-.overview {
-  position: fixed;
-  inset: 0;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding: clamp(28px, 4vh, 64px) clamp(32px, 7vw, 140px);
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.5s ease;
-}
-body.stats-open .overview {
-  opacity: 1;
-  pointer-events: auto;
-}
-.overview.hidden {
-  opacity: 0;
-}
-
-/* Arrives in sequence rather than all at once. */
-.overview > * {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.8s ease, transform 1s cubic-bezier(0.22, 1, 0.36, 1);
-}
-body.stats-open .overview > * {
-  opacity: 1;
-  transform: none;
-}
-body.stats-open .overview > *:nth-child(1) { transition-delay: 0.06s; }
-body.stats-open .overview > *:nth-child(2) { transition-delay: 0.16s; }
-body.stats-open .overview > *:nth-child(3) { transition-delay: 0.28s; }
-body.stats-open .overview > *:nth-child(4) { transition-delay: 0.4s; }
-body.stats-open .overview > *:nth-child(5) { transition-delay: 0.72s; }
-
-.overview-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.9em;
-  font-family: var(--font-display);
-  font-size: var(--t-eyebrow);
-  font-weight: 500;
-  letter-spacing: var(--t-eyebrow-track);
-  text-transform: uppercase;
-  color: var(--accent-ink);
-}
-/* display:inline-flex above would otherwise beat the [hidden] default, leaving
-   an empty span that still draws its two rules. Same trap as .brand-logo. */
-.overview-eyebrow[hidden] {
-  display: none;
-}
-.overview-eyebrow::before,
-.overview-eyebrow::after {
-  content: "";
-  width: clamp(24px, 3vw, 56px);
-  height: 1px;
-  background: var(--accent);
-  opacity: 0.75;
-}
-
-.overview-headline {
-  margin-top: clamp(20px, 3vh, 38px);
-  font-family: var(--font-display);
-  font-size: clamp(32px, 5.4vw, 96px);
-  font-weight: 500;
-  line-height: 1.01;
-  letter-spacing: -0.025em;
-  color: var(--ink);
-  text-shadow: 0 4px 50px rgba(0, 0, 0, 0.75);
-}
-.overview-sub {
-  margin-top: clamp(16px, 2.2vh, 26px);
-  font-size: var(--t-lead);
-  line-height: var(--t-lead-lh);
-  color: var(--ink-soft);
-  max-width: 56ch;
-  text-shadow: 0 1px 22px rgba(0, 0, 0, 0.65);
-}
-
-/* One row, divided — reads as a single measured statement. */
-.facts {
-  margin-top: clamp(34px, 6vh, 84px);
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-}
-.fact {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: clamp(8px, 1.1vh, 14px);
-  padding: 0 clamp(22px, 3.4vw, 68px);
-  border-left: 1px solid rgba(140, 195, 255, 0.16);
-}
-.fact:first-child {
-  border-left: none;
-}
-.fact-index {
-  font-family: var(--font-display);
-  font-size: clamp(9px, 0.62vw, 10.5px);
-  font-weight: 500;
-  letter-spacing: 0.3em;
-  color: var(--accent-ink);
-  opacity: 0.6;
-}
-.fact-body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: clamp(6px, 0.9vh, 11px);
-}
-.fact .v {
-  font-family: var(--font-display);
-  white-space: nowrap;
-  font-size: clamp(28px, 3.6vw, 62px);
-  font-weight: 500;
-  letter-spacing: -0.025em;
-  line-height: 1;
-  color: #dcefff;
-  text-shadow: 0 0 44px color-mix(in srgb, var(--accent) 45%, transparent);
-}
-.fact .l {
-  /* Wide enough that all three land on two lines, and height-locked so the
-     row sits on one baseline. */
-  max-width: 25ch;
-  min-height: calc(2em * 1.5);
-  font-size: var(--t-caption);
-  line-height: 1.5;
-  letter-spacing: var(--t-caption-track);
-  text-transform: uppercase;
-  color: var(--ink-soft);
-  opacity: 0.65;
-}
-
-.continue {
-  margin-top: clamp(34px, 6vh, 78px);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.9em;
-  padding: 1.15em 2.2em;
-  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-  color: var(--ink);
-  font-family: var(--font-display);
-  font-size: var(--t-eyebrow);
-  font-weight: 500;
-  letter-spacing: var(--t-eyebrow-track);
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
-}
-.continue:hover {
-  background: color-mix(in srgb, var(--accent) 24%, transparent);
-  border-color: var(--accent);
-  transform: translateY(-2px);
-}
-.continue-arrow {
-  font-size: 1.35em;
-  line-height: 1;
-  transition: transform 0.3s ease;
-}
-.continue:hover .continue-arrow {
-  transform: translateX(4px);
-}
-
 /* Parked under the hexagon. main.js projects the board's bottom vertex to
    screen space each frame and writes left/top, so it tracks the board however
    it is scaled or shifted. */
@@ -706,7 +536,7 @@ body.stats-open .overview > *:nth-child(5) { transition-delay: 0.72s; }
   gap: 12px;
   padding: 0.85em 1.5em;
   border-radius: 999px;
-  /* Parked over the brightest part of the overview plate, where the pill at
+  /* Parked over the framework still, where the pill at
      0.55 and accent-tinted type together measured 2.39:1. Darker glass and
      plain ink: this is the one instruction on the screen, so it should read
      first anyway. */
@@ -722,7 +552,6 @@ body.stats-open .overview > *:nth-child(5) { transition-delay: 0.72s; }
   animation: breathe 3.4s ease-in-out infinite;
 }
 body.intro-open .prompt,
-body.stats-open .prompt,
 body.warp-open .prompt,
 body.panel-open .prompt {
   opacity: 0;
@@ -733,9 +562,13 @@ body.panel-open .prompt {
   0% { transform: scale(0.55); opacity: 0.9; }
   100% { transform: scale(1.5); opacity: 0; }
 }
+/* The pill only ever shows on the framework screen, and that screen now has a
+   still behind it whose hexagon floor is far brighter than the flat navy this
+   pulse was tuned against. At the old 0.4 floor the glass stopped covering and
+   the type fell to 3.9:1. Same pulse, higher floor. */
 @keyframes breathe {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.85; }
+  0%, 100% { opacity: 0.78; }
+  50% { opacity: 1; }
 }
 
 /* ---------- detail panel ---------- */
@@ -1522,7 +1355,11 @@ body.case-mode .case-body {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-soft);
-  opacity: 0.28;
+  /* Deliberately quiet — it is a presenter aid, not visitor copy — but 0.28
+     over the new still measured 1.6:1, which is not quiet, it is invisible.
+     It is also hidden outright on touch, so this only ever shows to whoever is
+     driving with a keyboard. */
+  opacity: 0.58;
   pointer-events: none;
   transition: opacity 0.3s ease;
 }
@@ -1591,40 +1428,6 @@ body.touch .hint { display: none; }
   .hook {
     font-size: clamp(13px, 3.2vw, 19px);
   }
-
-  /* Tall kiosk panel: the overview column unwinds back under the hexagon. */
-  .overview {
-    inset: 0;
-    padding: clamp(28px, 6vh, 80px) clamp(24px, 7vw, 60px);
-  }
-  .overview-headline { font-size: clamp(30px, 7.6vw, 54px); }
-  .overview-sub { max-width: 40ch; }
-  .facts { flex-direction: column; align-items: center; gap: clamp(18px, 3vh, 30px); }
-  .fact {
-    border-left: none;
-    border-top: 1px solid rgba(140, 195, 255, 0.16);
-    padding: clamp(16px, 2.4vh, 24px) 0 0;
-    width: min(100%, 340px);
-  }
-  .fact:first-child { border-top: none; padding-top: 0; }
-  .fact .v { font-size: clamp(30px, 8vw, 48px); }
-  .prompt {
-    order: 0;
-    position: static;
-    transform: none;
-  }
-  /* The stats children are explicitly ordered, so Continue needs a place. */
-  .continue { order: 5; }
-  .fact {
-    flex: 1 1 0;
-    align-items: center;
-    text-align: center;
-    justify-content: center;
-    padding: 10px 8px;
-    border-radius: 12px;
-  }
-  .fact .v { font-size: clamp(18px, 4.6vw, 26px); }
-  .fact .l { font-size: clamp(8px, 1.9vw, 9.5px); white-space: normal; }
 
   /* Stack the case study under its still on a tall screen. */
   body.case-mode .video-stage {
@@ -1797,21 +1600,6 @@ body.warp-open .autoplay {
 body.panel-open .pool-bg {
   opacity: 1;
 }
-/* The stats plate is Evelyn's brightest, and its light shaft lands exactly
- * where the sub-paragraph sits. Measured against the real element boxes at
- * 1920x1080, that line was reading 2.67:1 against ink-soft, well under the 4.5
- * body text needs. This lifts it to about 5:1 without touching the artwork, and
- * fades out well before the edges so the hexagon field still carries the frame.
- * Centred rather than left-weighted because this page centres its copy. */
-body.stats-open .pool-bg {
-  opacity: 1;
-  background: radial-gradient(
-    74% 64% at 50% 46%,
-    rgba(4, 6, 14, 0.5) 0%,
-    rgba(4, 6, 14, 0.34) 55%,
-    rgba(4, 6, 14, 0) 100%
-  );
-}
 @media (max-aspect-ratio: 1/1) {
   .pool-bg {
     background:
@@ -1928,13 +1716,11 @@ body.stats-open .pool-bg {
    adds .fonts-ready once the weights it needs have loaded, and the board waits
    on the same promise before baking its label textures. */
 html:not(.fonts-ready) .intro-content,
-html:not(.fonts-ready) .overview,
 html:not(.fonts-ready) .panel-inner,
 html:not(.fonts-ready) .brand {
   opacity: 0;
 }
 .intro-content,
-.overview,
 .panel-inner,
 .brand {
   transition: opacity 0.32s ease;
@@ -2070,8 +1856,7 @@ html:not(.fonts-ready) .brand {
    position is restated because the portrait breakpoint drops the prompt to
    static so it can flow inside the stats card. On the framework screen it is
    not in that card, so it has to go back to being pinned. Everything else
-   about the pill stays as it was: the ground behind it is the navy backdrop,
-   the same as it always was. */
+   about the pill stays as it was. */
 body.board-in .prompt {
   position: fixed;
   left: 50%;

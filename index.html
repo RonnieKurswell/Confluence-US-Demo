@@ -15,9 +15,6 @@
   </head>
   <!-- Starts on the intro; main.js drops the class when Begin is pressed. -->
   <body class="intro-open">
-    <!-- The room the framework sits in: navy vignette plus drifting specks. -->
-    <canvas class="backdrop" id="backdrop" aria-hidden="true"></canvas>
-
     <!-- Background plates. Two stacked layers that cross-fade, so a stage can
          change its ground without a cut. Used to be WebGL quads. -->
     <div class="plate" id="plateA" aria-hidden="true"></div>
@@ -51,18 +48,6 @@
       </span>
       <span class="prompt-text">Tap a value pool to explore</span>
     </div>
-
-    <!-- Stats page: shown after the warp, before the hexagon -->
-    <section class="overview" id="overview">
-      <span class="overview-eyebrow" id="overviewEyebrow"></span>
-      <h1 class="overview-headline" id="overviewHeadline"></h1>
-      <p class="overview-sub" id="overviewSub"></p>
-      <div class="facts" id="facts"></div>
-      <button class="continue" id="continue">
-        <span id="continueLabel"></span>
-        <span class="continue-arrow" aria-hidden="true">→</span>
-      </button>
-    </section>
 
     <!-- Detail panel -->
     <aside class="panel" id="panel" aria-hidden="true">

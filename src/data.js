@@ -11,28 +11,6 @@ export const BRAND = {
     sub: 'Six value pools, one path to transformation.',
     cta: 'Begin',
   },
-  // Fact labels are capped at two lines in the layout — keep them short.
-  facts: [
-    { value: '$300–400B', label: 'AI-first services opportunity by 2030' },
-    { value: '90%', label: 'of our top 200 clients on an AI journey' },
-    // ---------------------------------------------------------------------
-    // NEEDS NITIN'S SIGN-OFF before the event. The number comes from the
-    // client-masked case studies his team is tagging (403 at the 14 Aug
-    // review, 113 offerings mapped). Rounded down to 400+ so it does not go
-    // stale. Confirm it is public-safe and still current, or swap the figure.
-    // ---------------------------------------------------------------------
-    { value: '400+', label: 'client case studies behind the framework' },
-  ],
-  // One entry per line — the break is deliberate, not left to the measure.
-  // Dropped after the 20 Aug review: the framework is already established by the
-  // time anyone reaches this card, so the eyebrow was repeating context. Put a
-  // string back here and it reappears.
-  statsEyebrow: '',
-  headline: ['Six value pools.', 'Deeply interconnected.'],
-  subhead:
-    'A structured path to orchestrate data, technology and operations at scale. Beyond experimentation, into the enterprise.',
-  continueCta: 'Explore the framework',
-
   // Case studies below are invented stand-ins for the 403 client-masked studies
   // Infosys is tagging. Flip to false once real ones are wired in — it drives
   // the "placeholder" badge in the UI so nothing reads as a real client claim.

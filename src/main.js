@@ -2,7 +2,6 @@ import '@fontsource-variable/inter';
 
 import { POOLS, BRAND } from './data.js';
 import { createBoard } from './hexboard.js';
-import { createBackdrop } from './backdrop.js';
 
 const IDLE_RESET_MS = 60_000; // kiosk: drop back to the overview after a minute
 const ATTRACT_AFTER_MS = 9_000; // idle on the overview: start sweeping segments
@@ -48,14 +47,11 @@ const PLATE_OPACITY = 0.8;
 
 const plateUrl = (name) => `${import.meta.env.BASE_URL}media/backgrounds/${name}.jpg`;
 
-// The stats card gets its own plate at full strength: it already carries the
-// tint Evelyn puts over it in Figma, so dimming it would just muddy artwork
-// that is already balanced for the copy sitting on it.
-//
-// The framework screen no longer takes one. overview.jpg is dark by design and
-// the new hexagon is dark navy on white, so the two cannot share a screen. A
-// light replacement is Evelyn's to supply.
-const STAGE_PLATES = { stats: 'stats' };
+// The framework screen carries the last frame of the warp clip, so the jump
+// lands on the still it ends on rather than cutting to a different ground.
+// Full strength: it is artwork balanced for the board sitting on it, and
+// dimming it would just muddy it.
+const FRAMEWORK_PLATE = 'framework';
 
 const platePair = [document.getElementById('plateA'), document.getElementById('plateB')];
 const plateState = { front: 0, current: null };
@@ -76,18 +72,12 @@ function setPlate(name, strength = PLATE_OPACITY) {
 }
 
 // Which plate belongs to the moment. Driven by the stage rather than by
-// select(), so the stats card gets one too and not just an open pool.
+// select() so it stays right through every transition, not just an open pool.
 function resolvePlate() {
   if (introOpen() || warpOpen()) setPlate(null);
-  else if (statsOpen()) setPlate(STAGE_PLATES.stats, 1);
   else if (state.selected >= 0) setPlate(POOLS[state.selected].id);
-  else setPlate(null);
+  else setPlate(FRAMEWORK_PLATE, 1);
 }
-
-/* ------------------------------------------------------------------ *
- * Backdrop
- * ------------------------------------------------------------------ */
-const backdrop = createBackdrop(document.getElementById('backdrop'));
 
 /* ------------------------------------------------------------------ *
  * The framework hexagon
@@ -126,7 +116,6 @@ layout();
  * ------------------------------------------------------------------ */
 const el = (id) => document.getElementById(id);
 const dom = {
-  overview: el('overview'),
   panel: el('panel'),
   verb: el('panelVerb'),
   title: el('panelTitle'),
@@ -140,7 +129,6 @@ const dom = {
 };
 
 el('brandLine').textContent = BRAND.brandLine;
-el('continueLabel').textContent = BRAND.continueCta;
 
 // Save the real mark as public/media/brand-logo.svg (or .png) and it replaces
 // the text stand-in automatically, the same way the videos resolve.
@@ -163,19 +151,6 @@ el('continueLabel').textContent = BRAND.continueCta;
 el('introHeadline').textContent = BRAND.intro.headline;
 el('introSub').textContent = BRAND.intro.sub;
 el('beginLabel').textContent = BRAND.intro.cta;
-el('overviewHeadline').innerHTML = BRAND.headline.join('<br>');
-el('overviewSub').textContent = BRAND.subhead;
-el('overviewEyebrow').textContent = BRAND.statsEyebrow;
-el('overviewEyebrow').hidden = !BRAND.statsEyebrow;
-el('facts').innerHTML = BRAND.facts
-  .map(
-    (f, i) => `<div class="fact">
-       <span class="fact-index">${String(i + 1).padStart(2, '0')}</span>
-       <span class="fact-body"><span class="v">${f.value}</span><span class="l">${f.label}</span></span>
-     </div>`
-  )
-  .join('');
-
 dom.dots.innerHTML = POOLS.map((_, i) => `<i data-i="${i}"></i>`).join('');
 dom.dots.addEventListener('click', (e) => {
   const i = e.target?.dataset?.i;
@@ -263,17 +238,8 @@ const introOpen = () => document.body.classList.contains('intro-open');
 function enterExperience() {
   if (!introOpen()) return;
   document.body.classList.remove('intro-open');
-  // If the warp cannot run, land on the stats page anyway.
-  if (!playWarp()) document.body.classList.add('stats-open');
-  paintStage();
-  state.lastInput = performance.now();
-}
-
-const statsOpen = () => document.body.classList.contains('stats-open');
-
-function leaveStats() {
-  seen.clear();
-  document.body.classList.remove('stats-open');
+  // If the warp cannot run, land straight on the framework.
+  playWarp();
   paintStage();
   state.lastInput = performance.now();
 }
@@ -281,7 +247,6 @@ function leaveStats() {
 function returnToIntro() {
   if (introOpen()) return;
   seen.clear();
-  document.body.classList.remove('stats-open');
   endWarp();
   hideVideo();
   hideCases();
@@ -312,8 +277,7 @@ function endWarp() {
   clearTimeout(warpTimer);
   warpTimer = null;
   document.body.classList.remove('warp-open');
-  // The warp lands on the stats page, not straight on the board.
-  if (!introOpen()) document.body.classList.add('stats-open');
+  // The warp lands straight on the framework now that the stats card is gone.
   paintStage();
   warpVideo.pause();
   state.lastInput = performance.now();
@@ -360,7 +324,6 @@ el('hintFramework').addEventListener('click', (e) => {
   deselect();
 });
 
-el('continue').addEventListener('click', leaveStats);
 el('begin').addEventListener('click', enterExperience);
 // Whole layer is tappable — kinder on a kiosk than hunting for the button.
 el('intro').addEventListener('click', enterExperience);
@@ -541,7 +504,6 @@ function select(i) {
 
   const pool = POOLS[i];
   document.body.classList.add('panel-open');
-  dom.overview.classList.add('hidden');
   dom.panel.classList.add('open');
   dom.panel.setAttribute('aria-hidden', 'false');
   // On the body, not the panel, so the case studies pick up the pool's accent too.
@@ -568,7 +530,6 @@ function deselect() {
   state.selected = -1;
   document.body.classList.remove('panel-open');
   dom.media.classList.remove('media-swap');
-  dom.overview.classList.remove('hidden');
   dom.panel.classList.remove('open');
   dom.panel.setAttribute('aria-hidden', 'true');
   document.body.style.removeProperty('--accent');
@@ -613,7 +574,7 @@ const cycle = (dir) => {
  * canvas any more, and skips anything inside the panel or an overlay so it
  * never swallows a button press. */
 let down = null;
-const IGNORE_HIT = '.panel, .video-layer, .cases-layer, .intro, .overview, .autoplay, .brand, button, a';
+const IGNORE_HIT = '.panel, .video-layer, .cases-layer, .intro, .autoplay, .brand, button, a';
 
 // e.target is not always an Element — a synthetic event can carry the document
 // itself — and closest() only exists on elements.
@@ -646,8 +607,8 @@ document.addEventListener('pointerup', (e) => {
 /* ------------------------------------------------------------------ *
  * Auto play
  * ------------------------------------------------------------------ *
- * Walks the whole experience on its own — intro, warp, stats, board, then each
- * value pool in turn — and loops. Two jobs: the booth plays itself when nobody
+ * Walks the whole experience on its own — intro, warp, board, then each value
+ * pool in turn — and loops. Two jobs: the booth plays itself when nobody
  * is standing at it, and a presenter can let it run while they talk over it.
  *
  * It drives the same functions a visitor's touch does rather than synthesising
@@ -655,7 +616,6 @@ document.addEventListener('pointerup', (e) => {
  */
 const TOUR_HOLD = {
   warp: WARP_MS + 700, // the jump, plus a beat to land
-  stats: 6_000, // long enough to read the headline and three proof points
   board: 3_200, // the hexagon on its own before the first pool opens
   pool: 7_000, // one value pool: title, three points, film
   reset: 2_400, // back on the intro before it goes round again
@@ -701,18 +661,11 @@ async function startTour() {
 
     enterExperience();
     // Only wait out the warp if it actually started — a missing or blocked clip
-    // drops straight onto the stats page and should not sit there twice as long.
+    // drops straight onto the framework and should not sit there twice as long.
     if (document.body.classList.contains('warp-open')) {
       if (!(await beat(TOUR_HOLD.warp))) return;
       endWarp();
     }
-    if (!statsOpen()) {
-      document.body.classList.add('stats-open');
-      paintStage();
-    }
-    if (!(await beat(TOUR_HOLD.stats))) return;
-
-    leaveStats();
     if (!(await beat(TOUR_HOLD.board))) return;
 
     for (let i = 0; i < POOLS.length; i++) {
@@ -764,10 +717,6 @@ addEventListener('keydown', (e) => {
     if (e.key === 'Escape') hideCases();
     return;
   }
-  if (statsOpen()) {
-    if (e.key === 'Enter' || e.key === ' ') leaveStats();
-    return;
-  }
   if (e.key === 'Escape') return deselect();
   if (e.key === 'ArrowRight') return cycle(1);
   if (e.key === 'ArrowLeft') return cycle(-1);
@@ -795,18 +744,14 @@ addEventListener(
  * ------------------------------------------------------------------ */
 
 /* Which stage owns the screen. One class on the body; the stylesheet does the
- * rest. Every transition calls this — enterExperience, leaveStats, endWarp,
- * playWarp, returnToIntro, select, deselect and the tour. Declared rather than
+ * rest. Every transition calls this — enterExperience, endWarp, playWarp,
+ * returnToIntro, select, deselect and the tour. Declared rather than
  * assigned so it hoists above those callers. The framework screen is the only one that shows the board, and an open
  * pool hands the whole right side to its film, so the board clears out with it.
  * Putting the board back on an open pool is deleting one clause here. */
 function paintStage() {
-  const boardUp = !introOpen() && !statsOpen() && !warpOpen() && state.selected < 0;
+  const boardUp = !introOpen() && !warpOpen() && state.selected < 0;
   document.body.classList.toggle('board-in', boardUp);
-  // The specks only drift while the framework is the screen. Everywhere else
-  // something opaque is over them, and a kiosk running all day should not be
-  // animating a particle field nobody can see.
-  backdrop.setRunning(boardUp);
   resolvePlate();
 }
 
@@ -823,7 +768,7 @@ setInterval(() => {
   if (!introOpen() && idle > INTRO_RETURN_MS) returnToIntro();
 
   // Attract mode: sweep a highlight around the ring while nobody is touching.
-  if (state.selected < 0 && !introOpen() && !statsOpen() && !warpOpen() && idle > ATTRACT_AFTER_MS) {
+  if (state.selected < 0 && !introOpen() && !warpOpen() && idle > ATTRACT_AFTER_MS) {
     state.attractTimer += KIOSK_TICK_MS;
     if (state.attractTimer > 1_600) {
       state.attractTimer = 0;
@@ -847,11 +792,8 @@ setInterval(() => {
 
   const clamp = (n, max) => Math.min(Math.max(Number(n) || 0, 0), max);
   enterExperience();
-  // enterExperience lands on the stats card, which is right for a visitor but
-  // not for a deep link: every screen below it sits past that card, so leaving
-  // the class on rendered the title card on top of the target screen.
+  // Begin plays the warp, which a deep link has to jump past.
   endWarp();
-  leaveStats();
   if (screen !== 'overview') select(clamp(q.get('pool'), POOLS.length - 1));
   if (screen === 'video') showVideo();
   if (screen === 'case') showCase(clamp(q.get('case'), 2));
@@ -880,10 +822,8 @@ window.__demo = {
   tour,
   TOUR_HOLD,
   platePair,
-  backdrop,
   resolvePlate,
   paintStage,
-  STAGE_PLATES,
   select,
   deselect,
 };
