@@ -74,7 +74,7 @@ function setPlate(name, strength = PLATE_OPACITY) {
 // Which plate belongs to the moment. Driven by the stage rather than by
 // select() so it stays right through every transition, not just an open pool.
 function resolvePlate() {
-  if (introOpen() || warpOpen()) setPlate(null);
+  if (introOpen() || warpOpen() || leonOpen()) setPlate(null);
   else if (state.selected >= 0) setPlate(POOLS[state.selected].id);
   else setPlate(FRAMEWORK_PLATE, 1);
 }
@@ -248,6 +248,7 @@ function returnToIntro() {
   if (introOpen()) return;
   seen.clear();
   endWarp();
+  endLeon();
   hideVideo();
   hideCases();
   deselect();
@@ -272,14 +273,17 @@ resolveVideo('warp').then((url) => {
   if (url) warpVideo.src = url;
 });
 
-function endWarp() {
+function endWarp({ handOver = true } = {}) {
   if (!document.body.classList.contains('warp-open')) return;
   clearTimeout(warpTimer);
   warpTimer = null;
   document.body.classList.remove('warp-open');
-  // The warp lands straight on the framework now that the stats card is gone.
-  paintStage();
   warpVideo.pause();
+  // The warp hands over to Leon's welcome. If that clip is missing or will not
+  // play, playLeon returns false and this lands on the framework instead —
+  // the same rule the warp itself follows: decoration must never gate entry.
+  if (handOver && !introOpen()) playLeon();
+  paintStage();
   state.lastInput = performance.now();
 }
 
@@ -299,6 +303,61 @@ function playWarp() {
   warpTimer = setTimeout(endWarp, WARP_MS + 250);
   return true;
 }
+
+/* ------------------------------------------------------------------ *
+ * Leon's welcome — played once, after the warp lands.
+ *
+ * Same contract as the warp: it is decoration and must never gate entry. A
+ * missing file, a blocked play() or a stalled decode all fall through to the
+ * framework, and a tap, a key or the Skip button ends it early.
+ *
+ * The clip carries a voice track. Begin is a click, so the document has user
+ * activation by the time this runs and sound is allowed; if a browser refuses
+ * anyway, it retries muted rather than dropping the welcome altogether.
+ * ------------------------------------------------------------------ */
+const leonVideo = el('leonVideo');
+const leonOpen = () => document.body.classList.contains('leon-open');
+let leonTimer = null;
+
+resolveVideo('leon').then((url) => {
+  if (url) leonVideo.src = url;
+});
+
+function endLeon() {
+  if (!leonOpen()) return;
+  clearTimeout(leonTimer);
+  leonTimer = null;
+  document.body.classList.remove('leon-open');
+  leonVideo.pause();
+  paintStage();
+  state.lastInput = performance.now();
+}
+
+function playLeon() {
+  if (!leonVideo.src) return false;
+  document.body.classList.add('leon-open');
+  leonVideo.currentTime = 0;
+  leonVideo.muted = false;
+  leonVideo.play().catch(() => {
+    // Autoplay with sound refused: keep the welcome, lose the audio.
+    leonVideo.muted = true;
+    leonVideo.play().catch(() => endLeon());
+  });
+  // Belt and braces, the same as the warp: 'ended' can be missed if the decode
+  // stalls. Driven off the clip's own length rather than a constant, so
+  // recutting it does not strand the timer.
+  const seconds = leonVideo.readyState >= 1 && leonVideo.duration ? leonVideo.duration : 40;
+  clearTimeout(leonTimer);
+  leonTimer = setTimeout(endLeon, seconds * 1000 + 500);
+  return true;
+}
+
+leonVideo.addEventListener('ended', endLeon);
+el('leon').addEventListener('click', endLeon);
+el('leonSkip').addEventListener('click', (e) => {
+  e.stopPropagation();
+  endLeon();
+});
 
 // The six pools are named as you fly through, so the jump carries the story
 // rather than just being motion. Timing is driven off WARP_MS.
@@ -616,6 +675,7 @@ document.addEventListener('pointerup', (e) => {
  */
 const TOUR_HOLD = {
   warp: WARP_MS + 700, // the jump, plus a beat to land
+  leon: 37_000, // the welcome, which runs 36s
   board: 3_200, // the hexagon on its own before the first pool opens
   pool: 7_000, // one value pool: title, three points, film
   reset: 2_400, // back on the intro before it goes round again
@@ -660,11 +720,15 @@ async function startTour() {
     }
 
     enterExperience();
-    // Only wait out the warp if it actually started — a missing or blocked clip
-    // drops straight onto the framework and should not sit there twice as long.
+    // Only wait out a film if it actually started — a missing or blocked clip
+    // drops straight through and should not sit there twice as long.
     if (document.body.classList.contains('warp-open')) {
       if (!(await beat(TOUR_HOLD.warp))) return;
       endWarp();
+    }
+    if (leonOpen()) {
+      if (!(await beat(TOUR_HOLD.leon))) return;
+      endLeon();
     }
     if (!(await beat(TOUR_HOLD.board))) return;
 
@@ -717,6 +781,7 @@ addEventListener('keydown', (e) => {
     if (e.key === 'Escape') hideCases();
     return;
   }
+  if (leonOpen()) return endLeon();
   if (e.key === 'Escape') return deselect();
   if (e.key === 'ArrowRight') return cycle(1);
   if (e.key === 'ArrowLeft') return cycle(-1);
@@ -750,7 +815,7 @@ addEventListener(
  * pool hands the whole right side to its film, so the board clears out with it.
  * Putting the board back on an open pool is deleting one clause here. */
 function paintStage() {
-  const boardUp = !introOpen() && !warpOpen() && state.selected < 0;
+  const boardUp = !introOpen() && !warpOpen() && !leonOpen() && state.selected < 0;
   document.body.classList.toggle('board-in', boardUp);
   resolvePlate();
 }
@@ -768,7 +833,7 @@ setInterval(() => {
   if (!introOpen() && idle > INTRO_RETURN_MS) returnToIntro();
 
   // Attract mode: sweep a highlight around the ring while nobody is touching.
-  if (state.selected < 0 && !introOpen() && !warpOpen() && idle > ATTRACT_AFTER_MS) {
+  if (state.selected < 0 && !introOpen() && !warpOpen() && !leonOpen() && idle > ATTRACT_AFTER_MS) {
     state.attractTimer += KIOSK_TICK_MS;
     if (state.attractTimer > 1_600) {
       state.attractTimer = 0;
@@ -792,8 +857,10 @@ setInterval(() => {
 
   const clamp = (n, max) => Math.min(Math.max(Number(n) || 0, 0), max);
   enterExperience();
-  // Begin plays the warp, which a deep link has to jump past.
-  endWarp();
+  // Begin plays the warp, which hands over to Leon's welcome. A deep link has
+  // to jump past both rather than sit through them.
+  endWarp({ handOver: false });
+  endLeon();
   if (screen !== 'overview') select(clamp(q.get('pool'), POOLS.length - 1));
   if (screen === 'video') showVideo();
   if (screen === 'case') showCase(clamp(q.get('case'), 2));
