@@ -11,17 +11,21 @@ const INTRO_RETURN_MS = 90_000; // untouched for this long: back to the intro lo
  * plays Tarun's cut fast or slow. Tarun's Sept 8 version runs 15.96s. */
 const WARP_MS = 16_000;
 // The objects need room to arrive before the names start landing on top of
-// them, so the first pool name holds off until the jump is underway.
-const WARP_NAMES_DELAY_MS = 2_500;
+// them, so the first pool name holds off until the jump is underway. Moved
+// from 2.5s to 8s: on Tarun's Sept 8 cut the tunnel wall is still bright and
+// busy until about 8s, and white type over it was competing with the artwork.
+const WARP_NAMES_DELAY_MS = 8_000;
 // The clip ends on a white flash, and white text over it is unreadable. Names
 // finish this far before the end so they are gone before the fade begins.
 // Retime this if the tail of the video changes. Measured on the Sept 8 cut:
-// the flash starts at 15.0s and is pure white by 15.9s, so names clearing at
-// 12.8s leave 2.2s of margin.
-const WARP_TAIL_MS = 3_200;
-// Each name's own animation. Shorter than the gap between them, so one clears
-// before the next arrives rather than the two overlapping into mush.
-const WARP_NAME_MS = 1_100;
+// the flash starts at 15.0s and is pure white by 15.9s, so the last name
+// clearing at 14.4s leaves 0.6s of margin.
+const WARP_TAIL_MS = 1_600;
+// Each name's own animation. Must stay shorter than the gap between them, so
+// one clears before the next arrives rather than the two overlapping into
+// mush. Six names between the 8s start and the flash only fit at 1.1s apart,
+// so this came down from 1.1s to leave a 200ms gap rather than none.
+const WARP_NAME_MS = 900;
 const FOCUS_SCALE = 2.5; // how far the board zooms when a pool is opened (2.1 -> +20%)
 
 /* The copy above the fold is held until the face is in — see .fonts-ready in
@@ -240,9 +244,51 @@ addEventListener('visibilitychange', () => {
 
 const introOpen = () => document.body.classList.contains('intro-open');
 
-function enterExperience() {
+/* Leaving the intro happens in two stages.
+ *
+ * Begin used to remove .intro-open and start the warp on the same frame, and
+ * the warp fades in over 120ms deliberately — fast, to hide the cut. So the
+ * headline and the button were painted over by black before the intro layer's
+ * own 850ms fade had gone anywhere, and the exit read as a hard cut.
+ *
+ * Stage one fades just the copy and holds everything else: .intro-open stays
+ * on the body, so the layer, the loop behind it and every stage rule that
+ * keys off the intro are all untouched. Stage two is the old behaviour.
+ *
+ * Deliberately not driven by transitionend: a dropped frame or a background
+ * tab would leave a visitor staring at the intro with nothing happening. */
+const INTRO_EXIT_MS = 560;
+const introLeaving = () => document.body.classList.contains('intro-leaving');
+let introExitTimer = null;
+let introExitAt = 0;
+
+function enterExperience({ fade = true } = {}) {
   if (!introOpen()) return;
-  document.body.classList.remove('intro-open');
+  if (!fade) return finishIntroExit();
+  if (introLeaving()) {
+    /* A second tap during the fade skips it — the same contract the warp and
+     * Leon follow: decoration never stands between a visitor and the content.
+     *
+     * But one gesture reaches this more than once. Begin's click bubbles to
+     * the intro layer, which is tappable too, and Enter on the focused button
+     * fires both the keydown handler and a native click. Without this window
+     * the second of those cancelled the fade the first had just started, so
+     * pressing Begin skipped its own animation every time. */
+    if (performance.now() - introExitAt > 120) finishIntroExit();
+    return;
+  }
+  document.body.classList.add('intro-leaving');
+  introExitAt = performance.now();
+  clearTimeout(introExitTimer);
+  introExitTimer = setTimeout(finishIntroExit, INTRO_EXIT_MS);
+  state.lastInput = performance.now();
+}
+
+function finishIntroExit() {
+  clearTimeout(introExitTimer);
+  introExitTimer = null;
+  if (!introOpen()) return;
+  document.body.classList.remove('intro-open', 'intro-leaving');
   // If the warp cannot run, land straight on the framework.
   playWarp();
   paintStage();
@@ -250,6 +296,11 @@ function enterExperience() {
 }
 
 function returnToIntro() {
+  // Cancel a Begin that is still fading, or its timer lands the visitor in the
+  // warp a moment after they asked to go back.
+  clearTimeout(introExitTimer);
+  introExitTimer = null;
+  document.body.classList.remove('intro-leaving');
   if (introOpen()) return;
   seen.clear();
   endWarp();
@@ -729,6 +780,9 @@ async function startTour() {
     }
 
     enterExperience();
+    // The intro's copy fades before the warp takes over, so the jump is not
+    // open yet on the frame after that call.
+    if (!(await beat(INTRO_EXIT_MS))) return;
     // Only wait out a film if it actually started — a missing or blocked clip
     // drops straight through and should not sit there twice as long.
     if (document.body.classList.contains('warp-open')) {
@@ -865,7 +919,7 @@ setInterval(() => {
   if (!screen || screen === 'intro') return;
 
   const clamp = (n, max) => Math.min(Math.max(Number(n) || 0, 0), max);
-  enterExperience();
+  enterExperience({ fade: false });
   // Begin plays the warp, which hands over to Leon's welcome. A deep link has
   // to jump past both rather than sit through them.
   endWarp({ handOver: false });

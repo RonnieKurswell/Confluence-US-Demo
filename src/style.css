@@ -347,6 +347,44 @@ body.intro-open .intro {
   transform: translateX(4px);
 }
 
+/* ---------- leaving the intro ----------
+   Begin used to remove .intro-open and start the warp on the same frame, and
+   the warp fades in over 120ms on purpose — fast, to hide the cut. So the
+   headline and the button were painted over by black long before the intro
+   layer's own 850ms fade had gone anywhere, and the exit read as a hard cut.
+
+   main.js now holds .intro-open on for INTRO_EXIT_MS first and adds this
+   class, so the copy gets the screen to itself while it goes. The loop and
+   the scrim behind it do not move until the copy has left.
+
+   Out in reverse reading order — the control is spent the instant it is
+   pressed, and the headline is the thing worth letting linger. The blur is
+   the same vocabulary the warp names leave on, so the two read as one idea.
+   Durations are budgeted against INTRO_EXIT_MS: the headline, last to go,
+   finishes at 530ms of 560ms. Retime both together. */
+body.intro-leaving .intro-headline,
+body.intro-leaving .intro-sub,
+body.intro-leaving .begin {
+  opacity: 0;
+  pointer-events: none;
+}
+body.intro-leaving .intro-headline {
+  transform: translateY(-14px);
+  filter: blur(5px);
+  transition: opacity 400ms ease 130ms, transform 400ms cubic-bezier(0.4, 0, 1, 1) 130ms,
+    filter 400ms ease 130ms;
+}
+body.intro-leaving .intro-sub {
+  transform: translateY(-10px);
+  filter: blur(3px);
+  transition: opacity 340ms ease 60ms, transform 340ms cubic-bezier(0.4, 0, 1, 1) 60ms,
+    filter 340ms ease 60ms;
+}
+body.intro-leaving .begin {
+  transform: translateY(-8px) scale(0.97);
+  transition: opacity 320ms ease, transform 320ms cubic-bezier(0.4, 0, 1, 1);
+}
+
 /* Everything behind the intro is inert while it is up. */
 body.intro-open .panel,
 body.intro-open .hint {
