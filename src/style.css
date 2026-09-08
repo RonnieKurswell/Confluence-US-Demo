@@ -57,6 +57,22 @@
   --t-caption: clamp(11.5px, 0.86vw, 13.5px);
   --t-caption-lh: 1.45;
   --t-caption-track: 0.08em;
+
+  /* ---- pool entrance ----
+     Every duration in the tap-a-pool transition, in one place. Huw read the
+     original set as a snap rather than a move, and two things were wrong with
+     it: it ran about 800ms end to end, and the board left at the same instant
+     the copy arrived, so nothing had a moment to read as leaving. --pool-lead
+     holds the copy back that fraction of a beat.
+
+     Swiping pool to pool shares these deliberately — one feel, not two. */
+  --pool-lead: 130ms;   /* head start the board gets before the copy arrives */
+  --pool-board: 0.86s;  /* board fading and scaling out, and back in */
+  --pool-plate: 0.78s;  /* background cross-fade */
+  --pool-panel: 0.94s;  /* the panel slab sliding in */
+  --pool-copy: 620ms;   /* each line of copy */
+  --pool-film: 840ms;   /* the film, which travels further */
+  --pool-poster: 980ms; /* the still settling inside it */
 }
 
 * {
@@ -105,7 +121,7 @@ body {
   background-size: cover;
   background-repeat: no-repeat;
   opacity: 0;
-  transition: opacity 0.55s ease;
+  transition: opacity var(--pool-plate) ease;
   pointer-events: none;
   z-index: 0;
 }
@@ -121,7 +137,8 @@ body {
   z-index: 2;
   opacity: 0;
   transform: scale(0.94);
-  transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity var(--pool-board) ease,
+    transform calc(var(--pool-board) + 0.12s) cubic-bezier(0.22, 1, 0.36, 1);
   pointer-events: none;
 }
 /* Only up on the framework screen: the intro, the stats card, the warp and an
@@ -645,7 +662,8 @@ body.panel-open .prompt {
   transform: translateX(-4%);
   opacity: 0;
   pointer-events: none;
-  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s ease;
+  transition: transform var(--pool-panel) cubic-bezier(0.22, 1, 0.36, 1),
+    opacity var(--pool-copy) ease;
 }
 .panel.open {
   transform: translateX(0);
@@ -656,7 +674,8 @@ body.panel-open .prompt {
 .panel-inner > * {
   opacity: 0;
   transform: translateY(16px);
-  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity var(--pool-copy) ease,
+    transform var(--pool-copy) cubic-bezier(0.22, 1, 0.36, 1);
 }
 .panel.open .panel-inner > * {
   opacity: 1;
@@ -782,8 +801,8 @@ body.panel-open .prompt {
   opacity: 0;
   pointer-events: none;
   transform: translateX(28px);
-  transition: opacity 0.45s ease,
-    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity var(--pool-copy) ease,
+    transform var(--pool-panel) cubic-bezier(0.22, 1, 0.36, 1);
   background:
     radial-gradient(
       110% 120% at 50% 40%,
@@ -1680,7 +1699,7 @@ body.panel-open .pool-bg {
    back until the old had left, and a booth cannot afford to feel laggy. The
    board is still moving underneath, which covers the cut. */
 .panel-swap > * {
-  animation: panelIn 460ms cubic-bezier(0.16, 0.84, 0.3, 1) both;
+  animation: panelIn var(--pool-copy) cubic-bezier(0.16, 0.84, 0.3, 1) both;
 }
 @keyframes panelIn {
   from {
@@ -1707,46 +1726,46 @@ body.panel-open .pool-bg {
 }
 /* Reading order, so the eye is led down the column rather than hit all at once. */
 .panel-swap > .verb {
-  animation-delay: 0ms;
+  animation-delay: var(--pool-lead);
 }
 .panel-swap > .title {
-  animation-delay: 45ms;
+  animation-delay: calc(var(--pool-lead) + 60ms);
 }
 .panel-swap > .hook {
-  animation-delay: 90ms;
+  animation-delay: calc(var(--pool-lead) + 120ms);
 }
 .panel-swap > .bullets {
-  animation-delay: 0ms;
+  animation-delay: var(--pool-lead);
 }
 
 .panel-swap > .panel-actions {
-  animation-delay: 280ms;
+  animation-delay: calc(var(--pool-lead) + 300ms);
 }
 /* Bullets carry their own stagger inside the list. */
 .panel-swap .bullets li {
-  animation: panelIn 420ms cubic-bezier(0.16, 0.84, 0.3, 1) both;
+  animation: panelIn calc(var(--pool-copy) * 0.9) cubic-bezier(0.16, 0.84, 0.3, 1) both;
 }
 .panel-swap .bullets li:nth-child(1) {
-  animation-delay: 130ms;
+  animation-delay: calc(var(--pool-lead) + 140ms);
 }
 .panel-swap .bullets li:nth-child(2) {
-  animation-delay: 168ms;
+  animation-delay: calc(var(--pool-lead) + 180ms);
 }
 .panel-swap .bullets li:nth-child(3) {
-  animation-delay: 206ms;
+  animation-delay: calc(var(--pool-lead) + 220ms);
 }
 .panel-swap .bullets li:nth-child(n + 4) {
-  animation-delay: 244ms;
+  animation-delay: calc(var(--pool-lead) + 260ms);
 }
 /* The poster gets a touch of scale on top, so the film slot feels like it lands
    rather than appears. */
 .media-swap {
-  animation: filmIn 620ms cubic-bezier(0.16, 0.84, 0.3, 1) both;
-  animation-delay: 60ms;
+  animation: filmIn var(--pool-film) cubic-bezier(0.16, 0.84, 0.3, 1) both;
+  animation-delay: calc(var(--pool-lead) + 40ms);
 }
 .media-swap .media-poster {
-  animation: posterIn 760ms cubic-bezier(0.16, 0.84, 0.3, 1) both;
-  animation-delay: 60ms;
+  animation: posterIn var(--pool-poster) cubic-bezier(0.16, 0.84, 0.3, 1) both;
+  animation-delay: calc(var(--pool-lead) + 40ms);
 }
 @keyframes posterIn {
   from {
