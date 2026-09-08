@@ -56,10 +56,17 @@ const PLATE_OPACITY = 0.8;
 
 const plateUrl = (name) => `${import.meta.env.BASE_URL}media/backgrounds/${name}.jpg`;
 
-// The framework screen carries the last frame of the warp clip, so the jump
-// lands on the still it ends on rather than cutting to a different ground.
-// Full strength: it is artwork balanced for the board sitting on it, and
-// dimming it would just muddy it.
+/* The still the framework screen sits on. It came from the end of Leon's
+ * welcome — the previous cut's last frame matched this file to within 1.4/255,
+ * which is what made his exit invisible. The Sept 8 D1 cut ends on a white
+ * flash instead, so that no longer holds and the handoff is a real cross-fade
+ * now; see --leon-out in the stylesheet.
+ *
+ * (An earlier version of this comment claimed the file was the warp's last
+ * frame. It is not, and never was — both warp cuts end on white.)
+ *
+ * Full strength: it is artwork balanced for the board sitting on it, and
+ * dimming it would just muddy it. */
 const FRAMEWORK_PLATE = 'framework';
 
 const platePair = [document.getElementById('plateA'), document.getElementById('plateB')];
@@ -80,10 +87,17 @@ function setPlate(name, strength = PLATE_OPACITY) {
   plateState.front = next;
 }
 
-// Which plate belongs to the moment. Driven by the stage rather than by
-// select() so it stays right through every transition, not just an open pool.
+/* Which plate belongs to the moment. Driven by the stage rather than by
+ * select() so it stays right through every transition, not just an open pool.
+ *
+ * Leon is not in the blanking list, deliberately. His layer is opaque and
+ * full screen, so the plate behind him is invisible either way — but leaving
+ * the framework up means his fade lands on a ground that is already there.
+ * Blanking it made the two cross over, and for the 450ms of the crossover the
+ * body gradient showed through the gap. It also gives the plate his whole
+ * 34 seconds to decode, so the framework never pops in on a cold load. */
 function resolvePlate() {
-  if (introOpen() || warpOpen() || leonOpen()) setPlate(null);
+  if (introOpen() || warpOpen()) setPlate(null);
   else if (state.selected >= 0) setPlate(POOLS[state.selected].id);
   else setPlate(FRAMEWORK_PLATE, 1);
 }
@@ -379,12 +393,28 @@ resolveVideo('leon').then((url) => {
   if (url) leonVideo.src = url;
 });
 
+/* Must match --leon-board-lead. The board's entrance is delayed by that much
+ * coming out of the welcome, and the class is dropped once the delay has run
+ * so it never reaches a pool opening or closing. Changing a transition-delay
+ * does not disturb a transition already in flight, so this is safe to remove
+ * at any point after paintStage has started the board moving. */
+const LEON_BOARD_LEAD_MS = 500;
+let leonHandoffTimer = null;
+
 function endLeon() {
   if (!leonOpen()) return;
   clearTimeout(leonTimer);
   leonTimer = null;
   document.body.classList.remove('leon-open');
   leonVideo.pause();
+  // Set before paintStage, so the board's transition is created with the delay
+  // already on it rather than starting and then being told to wait.
+  document.body.classList.add('leon-handoff');
+  clearTimeout(leonHandoffTimer);
+  leonHandoffTimer = setTimeout(() => {
+    document.body.classList.remove('leon-handoff');
+    leonHandoffTimer = null;
+  }, LEON_BOARD_LEAD_MS);
   paintStage();
   state.lastInput = performance.now();
 }
@@ -735,7 +765,7 @@ document.addEventListener('pointerup', (e) => {
  */
 const TOUR_HOLD = {
   warp: WARP_MS + 700, // the jump, plus a beat to land
-  leon: 37_000, // the welcome, which runs 36s
+  leon: 35_500, // the welcome, which runs 34.6s, plus the handoff
   board: 3_200, // the hexagon on its own before the first pool opens
   pool: 7_000, // one value pool: title, three points, film
   reset: 2_400, // back on the intro before it goes round again

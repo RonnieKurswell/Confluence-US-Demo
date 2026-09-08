@@ -73,6 +73,27 @@
   --pool-copy: 620ms;   /* each line of copy */
   --pool-film: 840ms;   /* the film, which travels further */
   --pool-poster: 980ms; /* the still settling inside it */
+
+  /* ---- coming out of Leon's welcome ----
+     The old cut ended on the framework still — its last frame matched
+     backgrounds/framework.jpg to within 1.4/255 and held for two seconds — so
+     his layer could vanish in 450ms and nothing appeared to change. The Sept 8
+     D1 cut ends on a white flash instead (luma 246 at 34.4s, against the
+     framework's 44), and that same 450ms now reads as a flash cutting to a
+     dark screen.
+
+     Three things fix it and they only work together:
+       - the framework plate is already up behind him, so there is no ground to
+         fade in and nothing dips through the body gradient in the middle
+         (resolvePlate in main.js no longer blanks it for Leon);
+       - his layer takes --leon-out to go, long enough for the flash to
+         dissolve rather than cut;
+       - the board waits --leon-board-lead before it starts, so the hexagon
+         settles onto a ground that is already there instead of materialising
+         through the tail of his fade.
+     Retime these together or the dip comes back. */
+  --leon-out: 0.9s;
+  --leon-board-lead: 0.5s;
 }
 
 * {
@@ -147,6 +168,12 @@ body.board-in .board {
   opacity: 1;
   transform: none;
   pointer-events: auto;
+}
+/* Only on the way out of Leon's welcome — see --leon-board-lead. main.js
+   carries this class for the length of the lead and then drops it, so the
+   delay never applies to a pool opening or closing. */
+body.leon-handoff .board {
+  transition-delay: var(--leon-board-lead);
 }
 .board-svg {
   width: min(76vh, 88vw);
@@ -554,7 +581,7 @@ body.warp-open .warp {
   background: #000;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.45s ease;
+  transition: opacity var(--leon-out) ease;
 }
 body.leon-open .leon {
   opacity: 1;
