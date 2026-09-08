@@ -6,13 +6,18 @@ import { createBoard } from './hexboard.js';
 const IDLE_RESET_MS = 60_000; // kiosk: drop back to the overview after a minute
 const ATTRACT_AFTER_MS = 9_000; // idle on the overview: start sweeping segments
 const INTRO_RETURN_MS = 90_000; // untouched for this long: back to the intro loop
-const WARP_MS = 12_000; // the wormhole clip at its own speed, not compressed
+/* The wormhole clip at its own speed, never compressed. Must match the source:
+ * playWarp divides one by the other to get a playbackRate, so a mismatch here
+ * plays Tarun's cut fast or slow. Tarun's Sept 8 version runs 15.96s. */
+const WARP_MS = 16_000;
 // The objects need room to arrive before the names start landing on top of
 // them, so the first pool name holds off until the jump is underway.
 const WARP_NAMES_DELAY_MS = 2_500;
 // The clip ends on a white flash, and white text over it is unreadable. Names
 // finish this far before the end so they are gone before the fade begins.
-// Retime this if the tail of John's video changes.
+// Retime this if the tail of the video changes. Measured on the Sept 8 cut:
+// the flash starts at 15.0s and is pure white by 15.9s, so names clearing at
+// 12.8s leave 2.2s of margin.
 const WARP_TAIL_MS = 3_200;
 // Each name's own animation. Shorter than the gap between them, so one clears
 // before the next arrives rather than the two overlapping into mush.
@@ -261,8 +266,8 @@ function returnToIntro() {
 
 /* Warp transition — the wormhole clip played once on the way in.
  *
- * The source is 12s; playbackRate compresses it to WARP_MS so the whole jump
- * happens in about two seconds. It is decorative and must never gate entry:
+ * The source and WARP_MS are both 16s, so playbackRate works out at 1 and the
+ * cut plays as graded. It is decorative and must never gate entry:
  * a missing file, a blocked play() or a stalled decode all fall through to the
  * framework, and any tap or key skips it. */
 const warpVideo = el('warpVideo');
@@ -294,7 +299,7 @@ function playWarp() {
   warpVideo.currentTime = 0;
   // Metadata is normally in by the time anyone reads the intro and clicks, but
   // fall back to the source's own length rather than skipping the transition.
-  const seconds = warpVideo.readyState >= 1 && warpVideo.duration ? warpVideo.duration : 12;
+  const seconds = warpVideo.readyState >= 1 && warpVideo.duration ? warpVideo.duration : 16;
   // Chrome refuses rates above 16.
   warpVideo.playbackRate = Math.min(16, seconds / (WARP_MS / 1000));
   warpVideo.play().catch(() => endWarp());
