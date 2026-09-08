@@ -1102,6 +1102,8 @@ body.cases-open .case-card:nth-child(3) { transition-delay: 0.12s; }
 .video-layer {
   position: fixed;
   inset: 0;
+  /* Under the case gallery at rest, because the gallery is the layer a visitor
+     is in when they have not opened anything yet. */
   z-index: 55;
   display: grid;
   place-items: center;
@@ -1357,8 +1359,11 @@ body.case-mode .case-body {
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--ink-soft);
-  opacity: 0.55;
+  /* Was --ink-soft at 0.55, which came out around 3:1 over the near-black
+     overlay — too dim to scan against the answers underneath. Full strength
+     accent ink instead: it still reads as a label rather than as copy, because
+     the size, weight and tracking do that job, not the dimming. */
+  color: var(--accent-ink);
 }
 .case-facts dd {
   margin-top: 3px;
@@ -1924,4 +1929,11 @@ body.no-anim *::before,
 body.no-anim *::after {
   transition: none !important;
   animation: none !important;
+}
+
+/* A case study opens on top of the gallery it was picked from. Without this it
+   renders underneath: the gallery sits at 58 and the expanded layer at 55, so
+   the write-up was there but hidden behind the three cards. */
+body.case-mode .video-layer {
+  z-index: 60;
 }

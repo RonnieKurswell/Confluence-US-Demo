@@ -452,9 +452,13 @@ function showCase(index) {
 
 function hideVideo() {
   if (!videoOpen()) return;
+  // A case study was opened from the gallery, so closing it goes back to the
+  // pool rather than to the gallery it came from — one tap out, not two.
+  const fromGallery = document.body.classList.contains('case-mode');
   document.body.classList.remove('video-open', 'case-mode');
   el('videoLayer').setAttribute('aria-hidden', 'true');
   lightbox.pause();
+  if (fromGallery) hideCases();
   state.lastInput = performance.now();
 }
 
