@@ -507,7 +507,18 @@ async function showVideo() {
   lightbox.src = url;
   el('videoFrame').classList.add('has-video');
   lightbox.currentTime = 0;
-  lightbox.play().catch(() => {});
+  /* The pool films are narrated, where this slot used to hold nothing but a
+   * silent placeholder loop. Opening one is a tap, so the document has user
+   * activation and sound is allowed; if a browser refuses anyway, retry muted
+   * rather than dropping the film. Same contract as Leon's welcome.
+   *
+   * The element is no longer `loop` either — a 44-second narrated film that
+   * restarts forever has no ending, and the visitor closes it themselves. */
+  lightbox.muted = false;
+  lightbox.play().catch(() => {
+    lightbox.muted = true;
+    lightbox.play().catch(() => {});
+  });
 }
 
 function showCase(index) {

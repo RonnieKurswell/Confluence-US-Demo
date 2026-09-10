@@ -116,7 +116,10 @@
         </button>
         <div class="stage-media">
           <div class="video-frame" id="videoFrame">
-            <video id="lightboxVideo" playsinline loop muted controls controlsList="nodownload noplaybackrate"></video>
+            <!-- Not muted and not looped, unlike the panel thumbnail behind it: the pool
+                 films are narrated and have an ending. showVideo unmutes on the tap that
+                 opens this, and falls back to muted if a browser refuses. -->
+            <video id="lightboxVideo" playsinline controls controlsList="nodownload noplaybackrate"></video>
             <img id="lightboxImage" alt="" />
             <div class="video-empty" id="videoEmpty">
               <div class="media-icon">▶</div>
