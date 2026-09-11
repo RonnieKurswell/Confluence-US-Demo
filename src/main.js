@@ -192,8 +192,17 @@ async function resolveVideo(id) {
   let found = null;
   try {
     const res = await fetch(url, { method: 'HEAD' });
-    const type = res.headers.get('content-type') || '';
-    if (res.ok && type.includes('video')) found = url;
+    const type = (res.headers.get('content-type') || '').toLowerCase();
+    /* This used to require the type to contain "video", which broke the moment
+     * the build left a dev server: S3 hands back application/octet-stream for
+     * an .mp4 uploaded without an explicit content type, and some Apache
+     * configs do the same. Every real film was then silently demoted to its
+     * poster, with nothing in the console to say why.
+     *
+     * What the check is actually for is not mistaking an error page for a
+     * film, so reject markup and trust the status code for everything else. */
+    const isErrorPage = type.includes('text/html') || type.includes('application/xml');
+    if (res.ok && !isErrorPage) found = url;
   } catch {
     /* offline / missing — fall through to the placeholder */
   }

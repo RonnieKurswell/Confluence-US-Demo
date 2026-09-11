@@ -1,0 +1,53 @@
+# Unlock AI Value — Apache / cPanel
+#
+# Drop this in the same folder as index.html. It is not required for the demo
+# to run: every path in the build is relative, so uploading the files alone
+# works. This exists for the two things shared hosting gets wrong.
+
+# ---- 1. MIME types -----------------------------------------------------
+# Some cPanel stacks still serve .mp4 and .woff2 as octet-stream. Chrome sniffs
+# past that, but Safari is fussier about video, and it is not a thing to leave
+# to chance on a client demo. Declaring them costs nothing where Apache already
+# knows.
+AddType video/mp4 .mp4
+AddType font/woff2 .woff2
+AddType image/jpeg .jpg .jpeg
+AddType image/png .png
+AddType image/svg+xml .svg
+
+# ---- 2. Byte-range requests -------------------------------------------
+# The browser seeks inside a 40MB film with range requests. Without this some
+# hosts send the whole file on every seek, or refuse the request outright and
+# the video stalls.
+<IfModule mod_headers.c>
+  Header set Accept-Ranges bytes
+</IfModule>
+
+# ---- Compression -------------------------------------------------------
+# Text only. Video and images are already compressed; gzipping them wastes CPU
+# and can break range requests.
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml
+</IfModule>
+
+# ---- Caching -----------------------------------------------------------
+# Vite fingerprints everything in /assets, so those are safe to cache hard.
+# index.html must not be, or a redeploy never reaches the kiosk.
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType video/mp4 "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 30 days"
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType text/html "access plus 0 seconds"
+</IfModule>
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# No rewrite rules on purpose. The demo keeps its state in the query string
+# (?screen=pool&pool=1), never in the path, so there is no SPA fallback to
+# configure and nothing to get wrong.

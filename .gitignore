@@ -16,3 +16,10 @@ dist/
 # Anchored to the root on purpose: public/media/*.mp4 must stay tracked.
 /*.mp4
 /*.mov
+
+# Export payloads. deploy/README.md, deploy/.htaccess and deploy/upload-to-s3.sh
+# are tracked — they are the deploy tooling. The built site and the archive are
+# not: they are ~130MB each, regenerate from `npm run build`, and this repo has
+# already been blocked once by committed video.
+deploy/site/
+deploy/*.zip
